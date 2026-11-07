@@ -3,7 +3,9 @@
 //
 // The rule engine of fix poly/react: given a bead and a candidate partner (or a bead alone), it
 // decides which reaction of a reaction file, if any, takes place. It knows nothing about LAMMPS;
-// the fix finds the candidates and carries out the outcome.
+// the fix finds the candidates and carries out the outcome. This header and reaction_file.hpp are
+// C++17, since the fix includes them and is compiled with the standard of the LAMMPS it is
+// loaded into.
 //
 // A reaction is possible for a pair if the types and functionalities match the equation in either
 // order (the bead that samples the partner first), the distance lies in [min_cutoff, cutoff), and
@@ -36,7 +38,7 @@ namespace polyreact {
 struct Bead {
   int type{0};
   int functionality{0};
-  bool operator==(const Bead&) const = default;
+  bool operator==(const Bead& o) const noexcept { return type == o.type && functionality == o.functionality; }
 };
 
 /// What the caller knows about a candidate pair.
@@ -103,6 +105,14 @@ class Engine {
   [[nodiscard]] double max_cutoff() const noexcept { return max_cutoff_; }
   /// Whether beads of this type can take part in a pair reaction.
   [[nodiscard]] bool reactive(int type) const noexcept { return in_range(type) && reactive_[static_cast<std::size_t>(type)]; }
+  /// Whether some pair reaction has beads of types a and b (in either order); a cheap test before
+  /// the context of a pair is worked out.
+  [[nodiscard]] bool may_react(int a, int b) const noexcept {
+    return in_range(a) && in_range(b) &&
+           !pair_table_[static_cast<std::size_t>(a) * static_cast<std::size_t>(num_types_) + static_cast<std::size_t>(b)].empty();
+  }
+  /// Whether beads of this type are the first bead of a pair reaction, i.e. look for partners.
+  [[nodiscard]] bool seeks(int type) const noexcept { return in_range(type) && seeks_[static_cast<std::size_t>(type)]; }
   [[nodiscard]] bool has_unimolecular() const noexcept { return has_single_; }
 
  private:
@@ -127,6 +137,7 @@ class Engine {
   std::vector<std::vector<std::uint32_t>> pair_table_;    ///< [a * num_types + b]: pair rules for types a, b
   std::vector<std::vector<std::uint32_t>> single_table_;  ///< [a]: unimolecular rules
   std::vector<std::uint8_t> reactive_;
+  std::vector<std::uint8_t> seeks_;
   Competition competition_{Competition::Independent};
   double max_cutoff_{0.0};
   bool has_single_{false};

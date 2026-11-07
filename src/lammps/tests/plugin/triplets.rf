@@ -1,0 +1,13 @@
+# B-A-B triplets: A takes up to two bonds, one per check, and closes the angle B-A-B
+[general]
+interval = 1
+
+[group_poly]
+bond_type = 1
+angle_type = 1
+
+[reaction_ab]
+reaction = A(0,2) + B -> A(1):D
+rate = 1
+cutoff = 1.0
+group = poly

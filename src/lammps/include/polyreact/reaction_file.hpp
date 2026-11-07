@@ -38,14 +38,14 @@ struct Reactant {
   int min{INT_MIN};
   int max{INT_MAX};
   [[nodiscard]] bool accepts(int functionality) const noexcept { return functionality >= min && functionality < max; }
-  bool operator==(const Reactant&) const = default;
+  bool operator==(const Reactant& o) const noexcept { return type == o.type && min == o.min && max == o.max; }
 };
 
 /// A bead on the right side: its new type and the change of its functionality.
 struct Product {
   std::string type;
   int delta{0};
-  bool operator==(const Product&) const = default;
+  bool operator==(const Product& o) const noexcept { return type == o.type && delta == o.delta; }
 };
 
 /// A parsed equation; products are in the order of the reactants (for an exchange A, B, C).

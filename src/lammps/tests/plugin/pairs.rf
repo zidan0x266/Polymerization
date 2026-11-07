@@ -1,0 +1,17 @@
+# isolated A-B pairs: each reacts with probability 0.1 per check; B also decays to D
+[general]
+interval = 1
+
+[group_poly]
+bond_type = 1
+
+[reaction_ab]
+reaction = A + B -> C:D
+rate = 0.1
+cutoff = 1.0
+group = poly
+
+[reaction_decay]
+reaction = B -> D
+rate = 0.05
+group = poly

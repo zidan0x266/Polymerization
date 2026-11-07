@@ -1,0 +1,33 @@
+# Kremer-Grest melt of single beads (monomers, cross-linkers, initiators) polymerizing with the FRP
+# preset; variables: plugin, rf, special (fene | weights), newton (on | off), out
+plugin load ${plugin}
+units lj
+atom_style full
+newton on ${newton}
+lattice fcc 0.85
+region box block 0 8 0 8 0 8
+create_box 11 box bond/types 1 angle/types 1 extra/bond/per/atom 6 extra/angle/per/atom 30 extra/special/per/atom 80
+labelmap atom 1 MON 2 PRI 3 ONE 4 TWO 5 THR 6 FOU 7 FIV 8 SIX 9 SEV 10 EIG 11 INI
+create_atoms 1 box
+set type MON type/fraction THR 0.05 1234
+set type MON type/fraction INI 0.03 4321
+mass * 1.0
+if "${special} == fene" then "special_bonds fene" else "special_bonds lj 0.0 0.5 0.5"
+pair_style lj/cut 1.122462048309373
+pair_coeff * * 1.0 1.0
+pair_modify shift yes
+bond_style fene
+bond_coeff 1 30.0 1.5 1.0 1.0
+angle_style cosine
+angle_coeff 1 1.5
+comm_modify cutoff 2.5
+velocity all create 1.0 87287 loop geom
+fix lang all langevin 1.0 1.0 1.0 4928
+fix nve all nve
+fix r all poly/react ${rf} 2025
+timestep 0.005
+thermo_style custom step f_r[1] f_r[3] f_r[4] bonds angles evdwl ebond eangle
+thermo_modify format float %22.15g
+thermo 1000
+run 3000
+write_data ${out} nocoeff

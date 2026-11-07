@@ -1,0 +1,13 @@
+# two bonded dimers side by side: the second bond of a square closes a ring
+[general]
+interval = 1
+
+[group_poly]
+bond_type = 1
+
+[reaction_ring]
+reaction = A + A -> C:C
+rate = 1
+cutoff = 1.0
+intramolecular = yes
+group = poly

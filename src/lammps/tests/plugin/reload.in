@@ -1,0 +1,17 @@
+# the final configuration of kg.in read again: LAMMPS builds the special lists from the bonds
+units lj
+atom_style full
+newton on ${newton}
+if "${special} == fene" then "special_bonds fene" else "special_bonds lj 0.0 0.5 0.5"
+read_data ${data}
+pair_style lj/cut 1.122462048309373
+pair_coeff * * 1.0 1.0
+pair_modify shift yes
+bond_style fene
+bond_coeff 1 30.0 1.5 1.0 1.0
+angle_style cosine
+angle_coeff 1 1.5
+comm_modify cutoff 2.5
+thermo_style custom step bonds angles evdwl ebond eangle
+thermo_modify format float %22.15g
+run 0

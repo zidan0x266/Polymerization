@@ -51,3 +51,19 @@ add_test(NAME statistical.smoke_frp
 add_executable(polyreact_tests ${CMAKE_SOURCE_DIR}/src/lammps/tests/test_main.cpp)
 target_link_libraries(polyreact_tests PRIVATE polyreact_core poly_warnings)
 add_test(NAME lammps.unit COMMAND polyreact_tests)
+
+# fix poly/react in LAMMPS: needs the plugin (-DPOLYREACT_LAMMPS_SOURCE=...) and the LAMMPS
+# executable it is loaded into; runs on 1 and 4 processors
+set(POLYREACT_LAMMPS_EXECUTABLE "" CACHE FILEPATH "LAMMPS executable for the tests of the fix poly/react plugin")
+if(POLYREACT_LAMMPS_EXECUTABLE AND TARGET polyreactplugin)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  set(polyreact_mpirun "")
+  if(POLYREACT_LAMMPS_MPI)
+    set(polyreact_mpirun ${MPIEXEC_EXECUTABLE})
+  endif()
+  add_test(NAME lammps.plugin
+    COMMAND Python3::Interpreter ${CMAKE_SOURCE_DIR}/src/lammps/tests/plugin/run_tests.py
+            --lmp ${POLYREACT_LAMMPS_EXECUTABLE} --plugin $<TARGET_FILE:polyreactplugin>
+            --preset $<TARGET_FILE:polyreact_preset> --mpirun "${polyreact_mpirun}" --np 1 4
+            --workdir ${CMAKE_BINARY_DIR}/smoke/lammps_plugin)
+endif()

@@ -1,0 +1,23 @@
+# fix poly/react on the small test systems; variables: plugin, data, rf, seed, partner, out, angles
+plugin load ${plugin}
+units lj
+atom_style full
+special_bonds lj 0 1 1
+read_data ${data} extra/bond/per/atom 2 extra/angle/per/atom 2 extra/special/per/atom 4
+fix prop all property/atom i_f ghost yes
+labelmap atom 1 A 2 B 3 C 4 D
+pair_style zero 1.5
+pair_coeff * *
+bond_style zero
+bond_coeff * 0.5
+angle_style zero
+angle_coeff * 180
+comm_modify cutoff 3.0
+fix r all poly/react ${rf} ${seed} partner ${partner} functionality f
+fix integ all nve
+compute t all count/type atom
+thermo_style custom step f_r[1] f_r[2] f_r[3] f_r[4] f_r[5] c_t[1] c_t[2] bonds angles
+thermo_modify norm no
+thermo 1
+run ${steps}
+write_data ${out} nocoeff

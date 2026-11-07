@@ -132,4 +132,4 @@ Krajniak (jkrajniak@gmail.com).
 The code is free for noncommercial use: research, teaching and personal study, and any use by
 universities, public research institutions, government laboratories and other noncommercial
 organizations, whatever their source of funding. Commercial use requires a separate license;
-please contact Zidan Zhang (zhangzidan@gmail.com).
+please contact Zidan Zhang and Jakub Krajniak.

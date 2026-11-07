@@ -2,15 +2,20 @@
 
 | file | system |
 |---|---|
-| `solution.ini` | chains of 16 beads in solvent at polymer fraction 0.5 |
-| `smoke_small.ini` | small system that runs in a fraction of a second |
+| `atrp_gel.ini` | ATRP copolymerization of a monomer and a cross-linker in bulk, [I]₀ : [X]₀ : [M]₀ = 1 : 2 : 100 (131,072 sites; about 25 s) |
+| `frp_solution.ini` | FRP copolymerization of a monomer and a cross-linker at 50 % solvent (55,296 sites; about 35 s) |
+| `solution.ini` | chains of 16 beads in solvent at polymer fraction 0.5, no reactions |
+| `smoke_react.ini` | small reactive system for the smoke tests (ATRP; FRP with `mechanism=frp`) |
+| `smoke_small.ini` | small system of chains in solvent for the smoke tests |
 
 From the repository root:
 
 ```bash
-build/src/dll/dll_react examples/example_3/solution.ini
-build/src/dll/dll_react examples/example_3/solution.ini initial=aligned n_chains=1024   # a melt
+build/src/dll/dll_react examples/example_3/atrp_gel.ini
+build/src/dll/dll_react examples/example_3/atrp_gel.ini reaction_partner=all_neighbors k_p1=0.005 k_p2=0.005
+build/src/dll/dll_react examples/example_3/frp_solution.ini samples=5
+build/src/dll/dll_react examples/example_3/solution.ini initial=aligned n_chains=1024   # a melt, no reactions
 ```
 
-The module is in phase 1: chains and solvent move, reactions are in preparation. All keys are
-described in [`src/dll/README.md`](../../src/dll/README.md).
+The gel point can be found from the PSF snapshots, for example as the maximum of the reduced
+degree of polymerization. All keys are described in [`src/dll/README.md`](../../src/dll/README.md).

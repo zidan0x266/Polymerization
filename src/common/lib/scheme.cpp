@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "bfm/reaction/scheme.hpp"
+#include "poly/chem/scheme.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace bfm {
+namespace poly::chem {
 
 std::string_view to_string(CompetitionRule r) noexcept {
   return r == CompetitionRule::Legacy ? "legacy" : "partition";
@@ -161,24 +161,22 @@ int RadicalChainScheme::termination_category(UnitView a, UnitView b) noexcept {
   return 0;
 }
 
-std::optional<ReactionEvent> RadicalChainScheme::propose_pair(Index a, UnitView ua, Index b, UnitView ub,
-                                                              Rng& rng) const {
+std::optional<Reaction> RadicalChainScheme::propose_pair(UnitView ua, UnitView ub, Rng& rng) const {
   // Direction of a possible propagation: the center unit attacks first (legacy order).
-  Index attacker = kNone, target = kNone;
+  bool can_propagate = false, second_attacks = false;
   UnitView vatt{}, vtgt{};
   if (ua.state.has_radical() && ub.state.has_vinyl()) {
-    attacker = a; target = b; vatt = ua; vtgt = ub;
+    can_propagate = true; vatt = ua; vtgt = ub;
   } else if (ub.state.has_radical() && ua.state.has_vinyl()) {
-    attacker = b; target = a; vatt = ub; vtgt = ua;
+    can_propagate = true; second_attacks = true; vatt = ub; vtgt = ua;
   }
-  const bool can_propagate = attacker != kNone;
   const bool can_terminate = features_.termination && ua.state.has_radical() && ub.state.has_radical();
   if (!can_propagate && !can_terminate) return std::nullopt;
 
   const auto propagation = [&] {
-    return ReactionEvent{EventKind::Propagation, attacker, target, propagation_category(vatt, vtgt)};
+    return Reaction{EventKind::Propagation, second_attacks, propagation_category(vatt, vtgt)};
   };
-  const auto termination = [&] { return ReactionEvent{EventKind::Termination, a, b, termination_category(ua, ub)}; };
+  const auto termination = [&] { return Reaction{EventKind::Termination, false, termination_category(ua, ub)}; };
 
   if (can_propagate && !can_terminate) {
     const double p = vtgt.state.is_unreacted_monomer() ? k_.k_p1 : k_.k_p2;
@@ -214,10 +212,10 @@ std::optional<ReactionEvent> RadicalChainScheme::propose_pair(Index a, UnitView 
   std::unreachable();
 }
 
-std::optional<ReactionEvent> RadicalChainScheme::propose_unimolecular(Index a, UnitView ua, Rng& rng) const {
+std::optional<Reaction> RadicalChainScheme::propose_unimolecular(UnitView ua, Rng& rng) const {
   if (!features_.explicit_initiation) return std::nullopt;
   if (ua.state.species != Species::Initiator || ua.state.has_radical() || ua.nbonds != 0) return std::nullopt;
-  if (rng.bernoulli(k_.k_init)) return ReactionEvent{EventKind::Initiation, a, kNone, 0};
+  if (rng.bernoulli(k_.k_init)) return Reaction{EventKind::Initiation, false, 0};
   return std::nullopt;
 }
 
@@ -233,4 +231,4 @@ std::unique_ptr<ReactionScheme> make_scheme(std::string_view mechanism, RateCons
   throw std::invalid_argument("unknown reaction mechanism '" + std::string(mechanism) + "' (expected frp or atrp)");
 }
 
-}  // namespace bfm
+}  // namespace poly::chem

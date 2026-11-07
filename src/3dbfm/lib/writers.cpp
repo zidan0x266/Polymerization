@@ -21,8 +21,6 @@ std::ofstream open_for_write(const std::filesystem::path& path, std::ios::openmo
 
 }  // namespace
 
-std::string legacy_conversion_tag(double conversion) { return std::format("{:f}", conversion); }
-
 void write_legacy_configuration(const std::filesystem::path& path, const BfmSystem& system) {
   auto out = open_for_write(path);
   const auto& lat = system.lattice();
@@ -150,34 +148,6 @@ void write_xyz(const std::filesystem::path& path, const BfmSystem& system) {
     std::println(out, "{:>7} {:>8.3f} {:>8.3f} {:>8.3f}", legacy_type_code(m.state, m.nbonds), static_cast<double>(m.anchor().x + 1),
                  static_cast<double>(m.anchor().y + 1), static_cast<double>(m.anchor().z + 1));
   }
-}
-
-SampleTables::SampleTables(const std::filesystem::path& dir, int sample, std::span<const std::string> category_labels) {
-  const auto open = [&](std::string_view stem, std::string_view header) {
-    const auto path = dir / std::format("{}_{}.dat", stem, sample);
-    const bool fresh = !std::filesystem::exists(path) || std::filesystem::file_size(path) == 0;
-    auto f = open_for_write(path, std::ios::app);
-    if (fresh) std::println(f, "{}", header);
-    return f;
-  };
-  structural_ = open("structural", "# mcs conversion s0_monomer s1_radical s2_dead s3_crosslinker s4 s5 s6 s7 s8 s9_initiator");
-  propagation_ = open("propagation", "# conversion monomer_monomer polymer_monomer polymer_polymer intramolecular");
-  std::string header = "# mcs conversion";
-  for (const std::string& label : category_labels) header += std::format(" {}", label);
-  reactype_ = open("reactype", header);
-}
-
-void SampleTables::append(long mcs, double conversion, const BfmSystem& system, std::span<const std::uint64_t> category_counts) {
-  std::print(structural_, "{} {:f}", mcs, conversion);
-  for (auto c : system.structural_counts()) std::print(structural_, " {}", c);
-  std::println(structural_, "");
-  const ConnectivityTally& tally = system.connectivity();
-  std::println(propagation_, "{:f} {} {} {} {}", conversion, tally.monomer_monomer, tally.polymer_monomer, tally.polymer_polymer,
-               tally.intramolecular);
-  std::print(reactype_, "{} {:f}", mcs, conversion);
-  for (auto c : category_counts) std::print(reactype_, " {}", c);
-  std::println(reactype_, "");
-  for (std::ofstream* f : {&structural_, &propagation_, &reactype_}) f->flush();
 }
 
 }  // namespace bfm

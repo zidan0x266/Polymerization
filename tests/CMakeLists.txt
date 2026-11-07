@@ -30,3 +30,8 @@ add_test(NAME dll.unit COMMAND dll_tests)
 
 add_test(NAME dll.smoke
   COMMAND dll_react ${POLY_EXAMPLES}/example_3/smoke_small.ini directory=${CMAKE_BINARY_DIR}/smoke/dll seed=3)
+add_test(NAME dll.smoke_atrp
+  COMMAND dll_react ${POLY_EXAMPLES}/example_3/smoke_react.ini mechanism=atrp directory=${CMAKE_BINARY_DIR}/smoke/dll_atrp seed=5)
+add_test(NAME dll.smoke_frp
+  COMMAND dll_react ${POLY_EXAMPLES}/example_3/smoke_react.ini mechanism=frp reaction_partner=all_neighbors
+          directory=${CMAKE_BINARY_DIR}/smoke/dll_frp seed=7)

@@ -4,12 +4,11 @@
 add_library(bfm STATIC
   lib/bond_set.cpp
   lib/system.cpp
-  lib/scheme.cpp
   lib/config.cpp
   lib/writers.cpp
   lib/simulation.cpp)
 target_include_directories(bfm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(bfm PUBLIC poly::common PRIVATE poly_warnings)
+target_link_libraries(bfm PUBLIC poly::common poly::chemistry PRIVATE poly_warnings)
 add_library(poly::bfm ALIAS bfm)
 
 add_executable(bfm_react apps/bfm_react.cpp)

@@ -3,8 +3,10 @@
 
 #include "dll/model/initial.hpp"
 
+#include <cstdint>
 #include <format>
 #include <stdexcept>
+#include <utility>
 
 #include "rw/walk/packer.hpp"
 
@@ -66,6 +68,29 @@ std::vector<poly::Vec3i> initial_chains(InitialConfiguration kind, int cells, st
   } catch (const std::runtime_error& e) {
     throw std::runtime_error(std::format("{}; use initial = aligned for dense systems", e.what()));
   }
+}
+
+std::vector<poly::Vec3i> random_free_points(int cells, std::span<const poly::Vec3i> occupied, std::size_t count,
+                                             poly::Rng& rng) {
+  const poly::FccGeometry lattice(cells);
+  std::vector<std::uint8_t> taken(lattice.num_sites(), 0);
+  for (const poly::Vec3i p : occupied) taken[lattice.site(lattice.wrap_any(p))] = 1;
+  std::vector<poly::Site> free;
+  free.reserve(lattice.num_sites() - occupied.size());
+  for (poly::Site s = 0; s < lattice.num_sites(); ++s) {
+    if (!taken[s]) free.push_back(s);
+  }
+  if (count > free.size()) {
+    throw std::invalid_argument(std::format("{} units do not fit into the {} free sites", count, free.size()));
+  }
+  // The first `count` entries of a partial Fisher-Yates shuffle are a uniform random sample.
+  std::vector<poly::Vec3i> points(count);
+  for (std::size_t i = 0; i < count; ++i) {
+    const std::size_t j = i + rng.below(static_cast<std::uint32_t>(free.size() - i));
+    std::swap(free[i], free[j]);
+    points[i] = lattice.position(free[i]);
+  }
+  return points;
 }
 
 }  // namespace dll

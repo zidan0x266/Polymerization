@@ -26,21 +26,6 @@
 
 namespace bfm {
 
-/// Running totals of the reaction phase for one sample.
-struct ReactionProgress {
-  std::uint64_t total_vinyls{0};     ///< N_mono + 2 N_di + N_initiator (legacy vinyl budget)
-  std::uint64_t consumed_vinyls{0};  ///< counts the initiator-derived units as consumed (legacy definition)
-  std::uint64_t propagations{0};
-  std::uint64_t terminations{0};
-  std::uint64_t initiations{0};
-  std::uint64_t live_radicals{0};
-  std::vector<std::uint64_t> category_counts;  ///< one-based categories; index 0 unused
-
-  [[nodiscard]] double conversion() const noexcept {
-    return total_vinyls ? static_cast<double>(consumed_vinyls) / static_cast<double>(total_vinyls) : 0.0;
-  }
-};
-
 /// A legacy reaction attempt: the center unit and the reaction-offset slot taken from it.
 struct ReactionAttempt {
   Index center{kNone};
@@ -81,7 +66,7 @@ class Simulation {
   void relax(long n_mcs, const char* label);
   void react(int sample);
   bool attempt_reaction(Index center, int slot);
-  void apply(const ReactionEvent& ev, Index center, Index partner, int slot);
+  void apply(const Reaction& reaction, Index center, Index partner, int slot);
   void rebuild_reactive_set();
   void update_reactive(Index id);
   void snapshot(int sample, long mcs, double level);

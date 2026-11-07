@@ -90,14 +90,17 @@ reactions. One reaction step of this system takes about 1.6 ms, so a million ste
 include/bfm/
   core/      basic types, random numbers and index sets
   lattice/   bond-vector set and periodic lattice
-  model/     unit states and the simulated system
-  reaction/  reaction schemes (FRP, ATRP)
+  model/     the simulated system (unit states from src/common)
+  reaction/  reaction schemes (FRP, ATRP; from src/common)
   io/        configuration and output
   sim/       simulation driver
 lib/         implementation
 apps/        bfm_react
 ```
 
-Unit tests are in [`tests/3dbfm`](../../tests/3dbfm). A new polymerization mechanism is added as a
-new `ReactionScheme`, which also declares which units are reactive. The lattice and system
-classes are independent of the chemistry.
+Unit tests are in [`tests/3dbfm`](../../tests/3dbfm). The chemistry (unit states, the FRP and ATRP
+reaction schemes, the reaction bookkeeping and the per-sample tables) is shared with the dll module
+and lives in [`src/common`](../common) (`poly/chem/`); `model/` and `reaction/` refer to it. A new
+polymerization mechanism is added there as a new `ReactionScheme`, which also declares which units
+are reactive, and is then available in both modules. The lattice and system classes are
+independent of the chemistry.

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 //
-// dll_react: dynamic lattice liquid simulation of chains and solvent on a fully occupied FCC
-// lattice. Reactions are not implemented yet (phase 1: motion only). See src/dll/README.md.
+// dll_react: reactive dynamic lattice liquid simulation on a fully occupied FCC lattice: free
+// radical (FRP) or atom transfer radical (ATRP) polymerization of monomers and cross-linkers,
+// optionally with solvent and inert precursor chains. See src/dll/README.md.
 //
 //   dll_react config.ini [key=value ...]
 //   dll_react --print-config          (dump the defaults in INI syntax)
@@ -23,9 +24,9 @@ namespace {
 constexpr std::string_view kUsage =
     "usage: dll_react [config.ini] [key=value ...]\n"
     "       dll_react --print-config\n\n"
-    "Dynamic lattice liquid simulation of chains and solvent on a fully occupied FCC lattice\n"
-    "(motion only; reactions are in preparation). Keys given on the command line override the\n"
-    "file. Run with --print-config to see every key and its default.\n";
+    "Reactive dynamic lattice liquid simulation (FRP or ATRP) on a fully occupied FCC lattice.\n"
+    "Keys given on the command line override the file. Run with --print-config to see every\n"
+    "key and its default.\n";
 
 }  // namespace
 

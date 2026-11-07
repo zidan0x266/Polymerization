@@ -19,6 +19,7 @@
 #include "bfm/lattice/bond_set.hpp"
 #include "bfm/lattice/lattice.hpp"
 #include "bfm/model/unit.hpp"
+#include "poly/chem/progress.hpp"
 
 namespace bfm {
 
@@ -65,13 +66,7 @@ struct alignas(32) Monomer {
 };
 static_assert(sizeof(Monomer) == 32, "Monomer is meant to fill exactly half a cache line");
 
-/// Tally of how reactions connect pre-existing structures (legacy mon_mon/poly_mon/...).
-struct ConnectivityTally {
-  std::uint64_t monomer_monomer{0};
-  std::uint64_t polymer_monomer{0};
-  std::uint64_t polymer_polymer{0};
-  std::uint64_t intramolecular{0};
-};
+using poly::chem::ConnectivityTally;
 
 class BfmSystem {
  public:

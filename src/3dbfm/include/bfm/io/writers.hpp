@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 //
-// Output: per-sample tables (same columns as the legacy structural_/propagation_/reactype_
-// files, now with a '#' header line), PDB/PSF snapshots in the legacy layout (1-based ids and
-// coordinates, legacy residue names) and the legacy `ini.dat` restart format for
-// interoperability with existing analysis scripts.
+// Output: PDB/PSF snapshots in the legacy layout (1-based ids and coordinates, legacy residue
+// names) and the legacy `ini.dat` restart format for interoperability with existing analysis
+// scripts. The per-sample tables come from src/common (poly/chem/tables.hpp).
 #pragma once
 
 #include <cstdint>
@@ -15,6 +14,7 @@
 #include <vector>
 
 #include "bfm/model/system.hpp"
+#include "poly/chem/tables.hpp"
 
 namespace bfm {
 
@@ -33,20 +33,8 @@ void write_pdb(const std::filesystem::path& path, const BfmSystem& system);
 void write_psf(const std::filesystem::path& path, const BfmSystem& system);
 void write_xyz(const std::filesystem::path& path, const BfmSystem& system);
 
-/// Append-mode tables for one sample. Files are created with a header on first use.
-class SampleTables {
- public:
-  SampleTables(const std::filesystem::path& dir, int sample, std::span<const std::string> category_labels);
-
-  void append(long mcs, double conversion, const BfmSystem& system, std::span<const std::uint64_t> category_counts);
-
- private:
-  std::ofstream structural_;
-  std::ofstream propagation_;
-  std::ofstream reactype_;
-};
-
-/// Format a conversion level the way the legacy file names did ("%lf" -> 6 decimals).
-[[nodiscard]] std::string legacy_conversion_tag(double conversion);
+// The per-sample tables are shared with the dll module.
+using poly::chem::legacy_conversion_tag;
+using poly::chem::SampleTables;
 
 }  // namespace bfm

@@ -25,14 +25,14 @@ their own work.
 |:--|:--|:--|:--:|:--:|
 | On-lattice: 3D bond fluctuation model | reactive Monte Carlo on a cubic lattice; free radical (FRP) and atom transfer radical (ATRP) polymerization | [**3dbfm**](src/3dbfm/README.md) | [example_1](examples/example_1/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
 | Random-walk packing | precursor chains (self-avoiding random walks on an FCC lattice) and cross-linkers packed into a box as the starting point of end-linking simulations in LAMMPS | [**randomwalk**](src/randomwalk/README.md) | [example_2](examples/example_2/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
-| On-lattice: dynamic lattice liquid model | reactive Monte Carlo with cooperative moves on a fully occupied lattice; motion of chains and solvent available, reactions in preparation | [**dll**](src/dll/README.md) | [example_3](examples/example_3/README.md) | ![on-going](https://img.shields.io/badge/on--going-yellow) |
+| On-lattice: dynamic lattice liquid model | reactive Monte Carlo with cooperative moves on a fully occupied lattice, with solvent; free radical (FRP) and atom transfer radical (ATRP) polymerization | [**dll**](src/dll/README.md) | [example_3](examples/example_3/README.md) | ![on-going](https://img.shields.io/badge/on--going-yellow) |
 | Pure statistical model | coordinate-free stochastic simulation of the reaction kinetics | **statistical** | — | ![in preparation](https://img.shields.io/badge/in%20preparation-orange) |
 | Coarse-grained model | reactive coarse-grained molecular dynamics as a fix for LAMMPS | **lammps** | — | ![in preparation](https://img.shields.io/badge/in%20preparation-orange) |
 
 Each module keeps its code and README under `src/<module>/`, inputs under
-`examples/example_<n>/` and tests under `tests/<module>/`. Code shared by all modules, the
-random number generator and the configuration-file reader, is in `src/common/`. All modules are
-built and tested together from the repository root.
+`examples/example_<n>/` and tests under `tests/<module>/`. Code shared by the modules, such as the
+random number generator, the configuration-file reader and the FRP/ATRP chemistry of the lattice
+models, is in `src/common/`. All modules are built and tested together from the repository root.
 
 ## Build
 

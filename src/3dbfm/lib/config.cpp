@@ -9,6 +9,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "poly/chem/tables.hpp"
 #include "poly/ini.hpp"
 
 namespace bfm {
@@ -111,22 +112,7 @@ void Config::validate() const {
 }
 
 std::vector<double> Config::snapshot_levels() const {
-  std::vector<double> levels;
-  // integer counter instead of repeated addition: no floating-point drift (the legacy
-  // 0.91 + 5*0.01 > 0.96 accident decided whether a 0.969 snapshot was written)
-  for (long i = 0;; ++i) {
-    const double level = snapshot_start + static_cast<double>(i) * snapshot_step;
-    if (level > stop_conversion + 1e-9) break;
-    levels.push_back(level);
-  }
-  for (double x : extra_snapshots) {
-    if (x > 0 && x <= stop_conversion + 1e-9) levels.push_back(x);
-  }
-  levels.push_back(stop_conversion);
-  std::ranges::sort(levels);
-  const auto dup = std::ranges::unique(levels, [](double a, double b) { return std::fabs(a - b) < 1e-9; });
-  levels.erase(dup.begin(), dup.end());
-  return levels;
+  return poly::chem::snapshot_levels(snapshot_start, snapshot_step, extra_snapshots, stop_conversion);
 }
 
 std::string Config::to_ini() const {

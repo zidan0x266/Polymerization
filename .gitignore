@@ -33,6 +33,7 @@ config.lmp
 endlink_No*/
 smoke_rw/
 smoke_dll/
+smoke_dll_react/
 dll_*/
 *.lammpstrj
 prepare/

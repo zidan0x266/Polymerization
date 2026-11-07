@@ -298,11 +298,11 @@ Outcome sample_pair(const ReactionScheme& scheme, int ca, int cb, int trials, Rn
   Outcome out;
   const UnitView va = view_for(ca), vb = view_for(cb);
   for (int t = 0; t < trials; ++t) {
-    const auto ev = scheme.propose_pair(0, va, 1, vb, rng);
+    const auto ev = scheme.propose_pair(va, vb, rng);
     if (!ev) continue;
     if (ev->kind == EventKind::Propagation) {
       ++out.propagations;
-      const bool a_attacks = (ev->first == 0);
+      const bool a_attacks = !ev->second_attacks;
       const int pa = a_attacks ? code_after(va, -1, 0, 1) : code_after(va, +1, -1, 1);
       const int pb = a_attacks ? code_after(vb, +1, -1, 1) : code_after(vb, -1, 0, 1);
       if (out.prod_a < 0) { out.prod_a = pa; out.prod_b = pb; }
@@ -395,9 +395,9 @@ void test_scheme_fidelity() {
   const RateConstants ki{0.3, 0.5, 0.25, 0.95};
   const auto frp_init = make_scheme("frp", ki, CompetitionRule::Legacy);
   int inits = 0;
-  for (int t = 0; t < trials; ++t) inits += frp_init->propose_unimolecular(0, view_for(9), rng).has_value() ? 1 : 0;
+  for (int t = 0; t < trials; ++t) inits += frp_init->propose_unimolecular(view_for(9), rng).has_value() ? 1 : 0;
   CHECK_NEAR(static_cast<double>(inits) / trials, 0.3, tol);
-  CHECK(!frp_init->propose_unimolecular(0, view_for(0), rng).has_value());
+  CHECK(!frp_init->propose_unimolecular(view_for(0), rng).has_value());
   CHECK(!atrp->has_unimolecular_step());
   CHECK(frp->has_unimolecular_step());
 
@@ -594,12 +594,12 @@ void test_reactive_sampling() {
     views.push_back(view_for(1, true));
     for (const UnitView& a : views) {
       bool uni = false;
-      for (int t = 0; t < 20; ++t) uni = uni || scheme->propose_unimolecular(0, a, rng).has_value();
+      for (int t = 0; t < 20; ++t) uni = uni || scheme->propose_unimolecular(a, rng).has_value();
       CHECK(!uni || scheme->is_reactive(a));
       for (const UnitView& b : views) {
         if (scheme->is_reactive(a) || scheme->is_reactive(b)) continue;
         bool reacted = false;
-        for (int t = 0; t < 20; ++t) reacted = reacted || scheme->propose_pair(0, a, 1, b, rng).has_value();
+        for (int t = 0; t < 20; ++t) reacted = reacted || scheme->propose_pair(a, b, rng).has_value();
         CHECK(!reacted);
       }
     }

@@ -45,30 +45,20 @@ void Simulation::prepare_system(int sample) {
   system_ = std::make_unique<BfmSystem>(PeriodicLattice(config_.lattice_x, config_.lattice_y, config_.lattice_z), bonds_);
   const auto composition = scheme_->initial_composition(config_.n_units, config_.monovinyl_fraction, config_.radical_fraction);
 
-  progress_ = ReactionProgress{};
-  progress_.category_counts.assign(scheme_->category_labels().size() + 1, 0);
+  progress_.reset(scheme_->category_labels().size());
   std::size_t n_init = 0;
   for (const UnitState& s : composition) {
-    progress_.total_vinyls += s.vinyls;
     if (s.species == Species::Initiator) ++n_init;
-    progress_.live_radicals += s.radicals;
   }
-  // Legacy accounting: the vinyl budget counts initiator-derived units as already consumed.
-  progress_.total_vinyls += n_init;
-  progress_.consumed_vinyls = n_init;
 
   if (!config_.initial_configuration.empty()) {
     log_line(std::format("sample {}: loading configuration {}", sample, config_.initial_configuration.string()));
     auto restart = read_legacy_configuration(config_.initial_configuration, system_->lattice().dimensions(), config_.n_units);
     system_->load(std::move(restart.units), restart.unwrapped);
-    progress_.live_radicals = 0;
-    progress_.consumed_vinyls = n_init;
-    for (const Monomer& m : system_->monomers()) {
-      progress_.live_radicals += m.state.radicals;
-      progress_.consumed_vinyls += static_cast<std::uint64_t>(max_vinyls(m.state.species) - m.state.vinyls);
-    }
+    for (const Monomer& m : system_->monomers()) progress_.count_unit(m.state);
     return;
   }
+  for (const UnitState& s : composition) progress_.count_unit(s);
 
   system_->place_randomly(composition, *rng_);
   const auto n_mono_total = static_cast<std::size_t>(static_cast<double>(config_.n_units) * config_.monovinyl_fraction);
@@ -125,8 +115,8 @@ bool Simulation::attempt_reaction(Index center, int slot) {
 
   if (partner == kNone) {
     if (scheme_->has_unimolecular_step() && !config_.initiation_requires_neighbor) {
-      if (const auto ev = scheme_->propose_unimolecular(center, vc, *rng_)) {
-        apply(*ev, center, kNone, slot);
+      if (const auto r = scheme_->propose_unimolecular(vc, *rng_)) {
+        apply(*r, center, kNone, slot);
         return true;
       }
     }
@@ -137,62 +127,37 @@ bool Simulation::attempt_reaction(Index center, int slot) {
 
   const Monomer& mp = system_->monomer(partner);
   const UnitView vp{mp.state, mp.nbonds};
-  if (const auto ev = scheme_->propose_pair(center, vc, partner, vp, *rng_)) {
-    apply(*ev, center, partner, slot);
+  if (const auto r = scheme_->propose_pair(vc, vp, *rng_)) {
+    apply(*r, center, partner, slot);
     return true;
   }
   if (scheme_->has_unimolecular_step()) {
     // Legacy quirk: the initiator branch is only reached when a partner was found.
-    if (const auto ev = scheme_->propose_unimolecular(center, vc, *rng_)) {
-      apply(*ev, center, kNone, slot);
+    if (const auto r = scheme_->propose_unimolecular(vc, *rng_)) {
+      apply(*r, center, kNone, slot);
       return true;
     }
   }
   return false;
 }
 
-void Simulation::apply(const ReactionEvent& ev, Index center, Index partner, int slot) {
-  switch (ev.kind) {
-    case EventKind::Propagation: {
-      Monomer& attacker = system_->monomer(ev.first);
-      Monomer& target = system_->monomer(ev.second);
-      --attacker.state.radicals;
-      --target.state.vinyls;
-      ++target.state.radicals;
-      system_->bond_through_offset(center, partner, slot);
-      ++progress_.propagations;
-      ++progress_.consumed_vinyls;
-      break;
-    }
-    case EventKind::Termination: {
-      Monomer& a = system_->monomer(ev.first);
-      Monomer& b = system_->monomer(ev.second);
-      --a.state.radicals;
-      --b.state.radicals;
-      system_->bond_through_offset(center, partner, slot);
-      ++progress_.terminations;
-      progress_.live_radicals -= 2;
-      break;
-    }
-    case EventKind::Initiation: {
-      Monomer& a = system_->monomer(ev.first);
-      ++a.state.radicals;
-      ++progress_.initiations;
-      ++progress_.live_radicals;
-      break;
-    }
+void Simulation::apply(const Reaction& reaction, Index center, Index partner, int slot) {
+  if (reaction.kind == EventKind::Initiation) {
+    poly::chem::apply(reaction, system_->monomer(center).state, progress_);
+  } else {
+    poly::chem::apply(reaction, system_->monomer(center).state, system_->monomer(partner).state, progress_);
+    system_->bond_through_offset(center, partner, slot);
   }
-  if (ev.category > 0 && static_cast<std::size_t>(ev.category) < progress_.category_counts.size()) {
-    ++progress_.category_counts[static_cast<std::size_t>(ev.category)];
-  }
-  for (const Index id : {ev.first, ev.second, center, partner}) {
-    if (id != kNone) update_reactive(id);
-  }
+  // The attacking unit first: the order of the reactive set decides which unit a draw picks.
+  const bool partner_first = reaction.kind == EventKind::Propagation && reaction.second_attacks;
+  update_reactive(partner_first ? partner : center);
+  if (partner != kNone) update_reactive(partner_first ? center : partner);
 }
 
 void Simulation::snapshot(int sample, long mcs, double level) {
   SampleTables tables(config_.output_dir, sample, scheme_->category_labels());
-  tables.append(mcs, level, *system_, std::span<const std::uint64_t>(progress_.category_counts).subspan(1));
+  tables.append(mcs, level, system_->structural_counts(), system_->connectivity(),
+                std::span<const std::uint64_t>(progress_.category_counts).subspan(1));
   const std::string tag = legacy_conversion_tag(level);
   if (config_.write_pdb) write_pdb(config_.output_dir / std::format("config_{}_{}.pdb", sample, tag), *system_);
   if (config_.write_psf) write_psf(config_.output_dir / std::format("config_{}_{}.psf", sample, tag), *system_);

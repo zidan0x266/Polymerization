@@ -21,8 +21,8 @@ std::optional<ReactionPartner> parse_reaction_partner(std::string_view s) noexce
   return std::nullopt;
 }
 
-Reactor::Reactor(const DllSystem& system, const poly::chem::ReactionScheme& scheme, ReactionPartner partner)
-    : scheme_(&scheme), partner_(partner), reactive_(system.n_units()), stage_of_(system.n_units(), 0) {
+Reactor::Reactor(const DllSystem& system, const poly::chem::ReactionScheme& scheme, ReactionPartner partner, bool cyclization)
+    : scheme_(&scheme), partner_(partner), cyclization_(cyclization), reactive_(system.n_units()), stage_of_(system.n_units(), 0) {
   for (std::size_t u = 0; u < system.n_units(); ++u) update(system, system.first_unit() + static_cast<Bead>(u));
 }
 
@@ -42,6 +42,10 @@ Bead Reactor::neighbor(const DllSystem& system, Bead b, int k) const noexcept {
 bool Reactor::attempt_pair(DllSystem& system, Bead center, Bead partner, poly::Rng& rng,
                            poly::chem::ReactionProgress& progress) {
   if (system.type(partner) != BeadType::Unit || system.bonded(center, partner)) return false;
+  if (!cyclization_ && !system.bonds(center).empty() && !system.bonds(partner).empty() &&
+      system.molecule(center) == system.molecule(partner)) {
+    return false;
+  }
   const auto r = scheme_->propose_pair(system.view(center), system.view(partner), rng);
   if (!r) return false;
   poly::chem::apply(*r, system.state(center), system.state(partner), progress);

@@ -141,7 +141,7 @@ class SampleRun {
     std::size_t next_level = 0;
     while (next_level < levels.size() && progress_.conversion() >= levels[next_level]) ++next_level;
     system_.reset_connectivity_tally();
-    Reactor reactor(system_, scheme_, config_.reaction_partner);
+    Reactor reactor(system_, scheme_, config_.reaction_partner, config_.cyclization);
     const bool reactive = system_.n_units() > 0;
     if (reactive) {
       say_(std::format("sample {}: reaction phase starts at conversion {:.6f} with {} reactive units", sample_,
@@ -233,8 +233,9 @@ DllSystem run(Config config, std::ostream& log) {
   const auto scheme = poly::chem::make_scheme(config.mechanism, config.rates, config.competition_rule);
   const auto& k = scheme->rate_constants();
   say(std::format("dynamic lattice liquid, mechanism {}, seed {}", scheme->name(), config.seed));
-  say(std::format("rate constants: k_init={} k_p1={} k_p2={} k_term={}, competition rule {}, reaction partner {}", k.k_init, k.k_p1,
-                  k.k_p2, k.k_term, poly::chem::to_string(config.competition_rule), to_string(config.reaction_partner)));
+  say(std::format("rate constants: k_init={} k_p1={} k_p2={} k_term={}, competition rule {}, reaction partner {}{}", k.k_init,
+                  k.k_p1, k.k_p2, k.k_term, poly::chem::to_string(config.competition_rule), to_string(config.reaction_partner),
+                  config.cyclization ? "" : ", no cyclization"));
 
   poly::Rng rng(config.seed);
   std::optional<DllSystem> last;

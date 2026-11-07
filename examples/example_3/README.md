@@ -3,6 +3,7 @@
 | file | system |
 |---|---|
 | `atrp_gel.ini` | ATRP copolymerization of a monomer and a cross-linker in bulk, [I]₀ : [X]₀ : [M]₀ = 1 : 2 : 100 (131,072 sites; about 25 s) |
+| `divinyl_2018.ini` | ATRP homopolymerization of a divinyl monomer in bulk, reproducing the DLL gel points of Lyu et al., *Macromolecules* 2018 (about 10 s) |
 | `frp_solution.ini` | FRP copolymerization of a monomer and a cross-linker at 50 % solvent (55,296 sites; about 35 s) |
 | `solution.ini` | chains of 16 beads in solvent at polymer fraction 0.5, no reactions |
 | `smoke_react.ini` | small reactive system for the smoke tests (ATRP; FRP with `mechanism=frp`) |

@@ -10,9 +10,8 @@ transfer radical (ATRP) polymerization of monomers and divinyl cross-linkers, is
 3dbfm module.
 
 **Status — on-going.** Phase 1, the motion of chains and solvent, and phase 2, the reactions, are
-done. The published descriptions leave some details open (see [Model](#model)); they are being
-checked against the published DLL results, in particular the gel points of ref. 4. Faster,
-parallel time steps are planned.
+done, and the module reproduces the published DLL gel points of ref. 4 (see the checks under
+[Model](#model)). Faster, parallel time steps are planned.
 
 ## Run
 
@@ -48,6 +47,7 @@ composition, chemistry and snapshot keys mean the same as in the
 | | `k_term` | `0` | termination by recombination (FRP) |
 | | `competition_rule` | `legacy` | propagation against termination for one pair, as in 3dbfm |
 | | `reaction_partner` | `random_neighbor` | which neighbors are tried in a time step: `random_neighbor` or `all_neighbors` (see [Model](#model)) |
+| | `cyclization` | `true` | reactions within a molecule (rings, intramolecular cross-links) take place like any other; `false` forbids them, for comparison only |
 | **Run** | `samples`, `first_sample` | `1`, `1` | number of independent samples and the number of the first |
 | | `seed` | `0` | random seed; `0` picks a fresh one |
 | | `equilibration_steps` | `0` | time steps of motion before the reactions start |
@@ -125,7 +125,12 @@ In the reaction stage, units on neighboring sites react with the probabilities g
 constants, by the rules of the 3dbfm module: a radical adds across the vinyl group of a monomer
 (`k_p1`) or a pendant vinyl (`k_p2`), two radicals recombine (`k_term`, FRP), and a dormant
 initiator decomposes (`k_init` per step, FRP). A new bond always joins neighbors, and the motion
-keeps it intact, so branched molecules and networks move without further rules. Only units that
+keeps it intact, so branched molecules and networks move without further rules. A radical reacts
+with whatever vinyl groups come into contact, including pendant vinyls of its own molecule, so
+cyclization and intramolecular cross-linking arise from the chain conformations and the
+dilution. They are the main reason why gel points lie above Flory–Stockmayer theory [4, 7];
+`cyclization = false` switches them off for comparison, as the "without cyclization" model of
+refs. 4 and 7. Only units that
 carry a radical, or dormant initiators, can start a reaction; those reactive at the start of
 the stage take part, in random order, and a radical passed on during the stage acts from the
 next step. `reaction_partner` sets which pairs are tried:
@@ -184,6 +189,20 @@ Checks of the reactions:
   vinyl conversion 0.54 for x = 5 and 0.84 for x = 2, and no gel up to 0.90 for x = 1, against
   0.32, 0.50 and 0.71 from Flory–Stockmayer theory. Cross-links within the same molecule delay
   gelation, the effect that brought the DLL gel points of ref. 2 close to experiment.
+- The DLL gel points of ref. 4 (Table 2), ATRP homopolymerization of a divinyl monomer on a
+  fully occupied lattice without solvent, are reproduced with equal reactivity per vinyl group
+  [6], i.e. `k_p2 = k_p1/2` (`divinyl_2018.ini`, 131,072 sites). Vinyl conversion at the gel
+  point, cross-linker conversion in parentheses:
+
+  | [X]₀/[I]₀ | with cyclization | ref. 4 | without cyclization | ref. 4 |
+  |:--|:--|:--|:--|:--|
+  | 100/1 | 0.13 (0.23) | 0.14 (0.22) | 0.11 (0.21) | 0.12 (0.23) |
+  | 100/10 | 0.32–0.34 (0.54–0.57) | 0.34 (0.57) | 0.31 (0.54) | 0.31 (0.56) |
+
+  The gel points do not depend on the reaction probability (0.005 to 0.1) or on
+  `reaction_partner`. They do depend on the relative reactivity of pendant vinyls (equal
+  probability per pair instead of per vinyl gives 0.12 and 0.28) and strongly on dilution (at
+  the monomer volume fraction of the experiments, 0.27, they rise to 0.25 and 0.50).
 
 ## Performance
 
@@ -232,3 +251,10 @@ starting configurations come from the randomwalk module.
 5. K. Hałagan, M. Banaszak, J. Jung, P. Polanowski, A. Sikorski. Computer simulation of the
    dynamic behavior of double polymer brush–solvent systems. *Comput. Methods Sci. Technol.*
    **2021**, 27, 141–149. [10.12921/cmst.2021.0000030](https://doi.org/10.12921/cmst.2021.0000030)
+6. H. Gao, P. Polanowski, K. Matyjaszewski. Gelation in living copolymerization of monomer and
+   divinyl cross-linker: comparison of ATRP experiments with Monte Carlo simulations.
+   *Macromolecules* **2009**, 42, 5925–5932. [10.1021/ma901005d](https://doi.org/10.1021/ma901005d)
+7. P. Polanowski, J. K. Jeszka, K. Krysiak, K. Matyjaszewski. Influence of intramolecular
+   crosslinking on gelation in living copolymerization of monomer and divinyl cross-linker. Monte
+   Carlo simulation studies. *Polymer* **2015**, 79, 171–178.
+   [10.1016/j.polymer.2015.10.018](https://doi.org/10.1016/j.polymer.2015.10.018)

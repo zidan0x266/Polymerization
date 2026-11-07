@@ -55,6 +55,7 @@ std::expected<void, std::string> Config::set(std::string_view raw_key, std::stri
     reaction_partner = *p;
     return {};
   }
+  if (key == "cyclization") return assign(cyclization, parse_bool(key, value));
   if (key == "samples") return assign(samples, parse_number<int>(key, value));
   if (key == "first_sample") return assign(first_sample, parse_number<int>(key, value));
   if (key == "seed") return assign(seed, parse_number<std::uint64_t>(key, value));
@@ -144,7 +145,8 @@ std::string Config::to_ini() const {
       "k_p2 = {}\n"
       "k_term = {}\n"
       "competition_rule = {}\n"
-      "reaction_partner = {}\n\n"
+      "reaction_partner = {}\n"
+      "cyclization = {}\n\n"
       "[run]\n"
       "samples = {}\n"
       "first_sample = {}\n"
@@ -165,7 +167,7 @@ std::string Config::to_ini() const {
       "dump_every = {}\n"
       "dump_solvent = {}\n",
       cells, n_units, monovinyl_fraction, radical_fraction, chain_length, n_chains, to_string(initial), yesno(allow_crossing), mechanism, rates.k_init,
-      rates.k_p1, rates.k_p2, rates.k_term, poly::chem::to_string(competition_rule), to_string(reaction_partner), samples,
+      rates.k_p1, rates.k_p2, rates.k_term, poly::chem::to_string(competition_rule), to_string(reaction_partner), yesno(cyclization), samples,
       first_sample, seed, equilibration_steps, steps, stop_conversion, snapshot_start, snapshot_step, extra, log_every,
       initial_configuration.string(), output_dir.string(), yesno(write_pdb), yesno(write_psf), yesno(write_restart), dump_every,
       yesno(dump_solvent));

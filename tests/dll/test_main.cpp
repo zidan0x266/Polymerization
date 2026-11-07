@@ -359,6 +359,7 @@ void test_config() {
   cfg.apply_overrides({"cells=6", "n_units=300", "--chain_length=12", "n_chains=40", "run.seed=3", "dump_every=10",
                        "mechanism=FRP", "k_init=0.01", "radical_fraction=0.02", "extra_snapshots=0.255"});
   CHECK(cfg.mechanism == "frp" && cfg.n_units == 300);
+  CHECK(cfg.set("cyclization", "no").has_value() && !cfg.cyclization);
   cfg.validate();
   const auto dir = std::filesystem::temp_directory_path() / "dll_test_config";
   std::filesystem::create_directories(dir);
@@ -493,6 +494,21 @@ void test_reaction_probabilities() {
   CHECK(reactor.step(chain, rng, progress) == 1 && chain.bonded(1, 2) && chain.state(2).has_radical());
   CHECK(reactor.step(chain, rng, progress) == 0 && progress.propagations == 2 && progress.conversion() == 1.0);
   CHECK(progress.category_counts[1] == 1 && progress.category_counts[2] == 1);  // primary + monomer, chain + monomer
+
+  // A radical next to a pendant vinyl of its own molecule closes a ring, unless cyclization is off.
+  const std::vector<Vec3i> ring_points{{0, 0, 0}, {1, 1, 0}, {1, 0, 1}};
+  const std::vector<UnitState> ring_states{{Species::Monovinyl, 1, 0}, {Species::Monovinyl, 0, 0}, {Species::Divinyl, 0, 1}};
+  const std::vector<BondPair> ring_bonds{{0, 1}, {1, 2}};
+  for (const bool cyclization : {true, false}) {
+    DllSystem ring(3, 0, {}, ring_points, ring_states, ring_bonds);
+    Reactor closer(ring, *atrp, ReactionPartner::AllNeighbors, cyclization);
+    ReactionProgress p;
+    p.reset(atrp->category_labels().size());
+    std::size_t made = 0;
+    for (int step = 0; step < 5; ++step) made += closer.step(ring, rng, p);
+    CHECK(made == (cyclization ? 1u : 0u) && ring.bonded(0, 2) == cyclization);
+    CHECK(ring.connectivity().intramolecular == (cyclization ? 1u : 0u));
+  }
 }
 
 // Bookkeeping that must hold at every step of a reacting system that also moves.

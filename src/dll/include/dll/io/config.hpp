@@ -36,6 +36,7 @@ struct Config {
   poly::chem::RateConstants rates{0.0, 0.005, 0.0025, 0.0};
   poly::chem::CompetitionRule competition_rule{poly::chem::CompetitionRule::Legacy};
   ReactionPartner reaction_partner{ReactionPartner::RandomNeighbor};
+  bool cyclization{true};  ///< false: no reactions between units of the same molecule
 
   // [run]
   int samples{1};

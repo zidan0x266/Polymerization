@@ -38,7 +38,9 @@ enum class ReactionPartner {
 
 class Reactor {
  public:
-  Reactor(const DllSystem& system, const poly::chem::ReactionScheme& scheme, ReactionPartner partner);
+  /// `cyclization = false` forbids reactions between units of the same molecule (no intramolecular
+  /// cross-links or rings).
+  Reactor(const DllSystem& system, const poly::chem::ReactionScheme& scheme, ReactionPartner partner, bool cyclization = true);
 
   /// One reaction stage. Returns the number of reactions.
   std::size_t step(DllSystem& system, poly::Rng& rng, poly::chem::ReactionProgress& progress);
@@ -58,6 +60,7 @@ class Reactor {
 
   const poly::chem::ReactionScheme* scheme_;
   ReactionPartner partner_;
+  bool cyclization_;
   poly::IndexSet<std::uint32_t> reactive_;  ///< by unit index (bead - first_unit)
   std::vector<std::uint32_t> order_;        ///< units taking part in the current stage
   std::vector<std::uint32_t> stage_of_;     ///< per unit: last stage it took part in

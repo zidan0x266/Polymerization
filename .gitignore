@@ -52,3 +52,6 @@ sources/
 
 # editor index caches
 .cache/
+
+# scratch work: test runs, validation data, analysis scripts
+scratch/

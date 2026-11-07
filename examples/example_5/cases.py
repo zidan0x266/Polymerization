@@ -47,8 +47,8 @@ def main():
                 if a.kind == "md":
                     d = "md" if a.rates == "fast" else "md_paper"
                     rf = f"{m}_paper.cfg" if a.rates == "paper" and m == "atrp" else f"{m}.cfg"
-                    print(f"mkdir -p {d}/{case} && cd {d}/{case} && $MPIRUN $LMP -in $LAMMPS_EXAMPLE/in.radical "
-                          f"-var plugin $PLUGIN -var rf $LAMMPS_EXAMPLE/{rf} -var mechanism {m} -var cells {cells} "
+                    print(f"mkdir -p {d}/{case} && cd {d}/{case} && $MPIRUN $LMP -in $EXAMPLE/in.radical "
+                          f"-var plugin $PLUGIN -var rf $EXAMPLE/{rf} -var mechanism {m} -var cells {cells} "
                           f"-var xl {x / 100:.2f} -var seed {seed('md', m, x, s)} -var stop {a.stop} -var out 1000 "
                           f"-var tag {case} -screen none")
                     continue

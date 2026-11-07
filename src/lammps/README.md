@@ -11,9 +11,9 @@ decides the reactions, the reaction files of free radical (FRP) and atom transfe
 polymerization (ATRP) with the chemistry of the [3dbfm module](../3dbfm/README.md), and the fix
 itself as a LAMMPS plugin, for association and unimolecular reactions on any number of processors.
 Phase 3 is under way: the fix reports the bond tally and the molecule statistics of the lattice
-modules, [`examples/radical`](examples/radical) forms the FRP and ATRP networks of ref. 3 in a
-Kremer–Grest melt, and [example 5](../../examples/example_5/README.md) compares them with the 3dbfm
-and statistical modules; the comparison runs on a cluster. Next:
+modules, and [example 5](../../examples/example_5/README.md) forms the FRP and ATRP networks of
+ref. 3 in a Kremer–Grest melt and compares them with the 3dbfm and statistical modules; the
+comparison runs on a cluster. Next:
 
 | Phase | Content |
 |:--|:--|
@@ -210,7 +210,7 @@ and its type is its structural unit in the original code:
 The reactions are listed in the order of the reaction categories of the 3dbfm module (propagation
 1–20, termination 21–35, then initiation), so the counts per reaction compare column by column.
 
-[`examples/radical`](examples/radical) runs these reactions in a Kremer–Grest melt (FENE bonds,
+[Example 5](../../examples/example_5/README.md) runs these reactions in a Kremer–Grest melt (FENE bonds,
 WCA repulsion, cosine bending with k = 1.5, ρ = 0.85, Langevin thermostat, Δt = 0.005, as in ref. 3),
 with the composition of the 3dbfm examples: 0.2 % initiator and a cross-linker fraction `xl`. The
 beads start on an FCC lattice and are melted; a check every 20 steps tries one random partner per
@@ -219,7 +219,7 @@ modules, the run stops at the conversion `stop`, and the thermo output gives the
 radicals, the bond tally and the molecule statistics:
 
 ```bash
-cd src/lammps/examples/radical
+cd examples/example_5
 mpirun -np 8 lmp -in in.radical -var plugin /path/to/polyreactplugin.so -var mechanism atrp -var xl 0.08
 ```
 
@@ -262,7 +262,6 @@ plugin/
   polyreact_plugin.cpp  registration with LAMMPS
 tests/                unit tests
 tests/plugin/         LAMMPS inputs, reaction files and the test driver run_tests.py
-examples/radical/     FRP and ATRP networks in a Kremer-Grest melt
 ```
 
 The plugin code compiles as C++17 (the engine headers it includes are C++17) and links the rule

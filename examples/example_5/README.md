@@ -1,14 +1,44 @@
-# Example 5 — the radical networks in three models
+# Example 5 — lammps
 
-Phase 3 of the [LAMMPS fix](../../src/lammps/README.md): the FRP and ATRP networks of Zhang et al.,
-*Macromolecules* **2025**, 58, 3168, formed in three models with the same chemistry, and compared at
-equal vinyl conversion:
+The FRP and ATRP networks of Zhang et al., *Macromolecules* **2025**, 58, 3168, formed in
+coarse-grained molecular dynamics with `fix poly/react` ([`src/lammps`](../../src/lammps/README.md)),
+and compared with the 3dbfm and statistical modules.
+
+| File | Purpose |
+|:--|:--|
+| `in.radical` | LAMMPS input: a Kremer–Grest melt of monomers, cross-linkers and initiators that polymerizes up to a given vinyl conversion |
+| `frp.cfg`, `atrp.cfg`, `atrp_paper.cfg` | reaction files written by `polyreact_preset`: FRP with the rate constants of the paper, ATRP with ten times and with the rate constants of the paper |
+| `cases.py` | writes the job lists of the comparison: one bash command per run |
+| `run_job.sh` | runs one line of a job list (the line number, or `$SLURM_ARRAY_TASK_ID`) |
+| `slurm_lattice.sbatch`, `slurm_md.sbatch` | SLURM job arrays for the lattice runs (one core each) and the LAMMPS runs (one node each) |
+| `analyze.py` | turns the PSF snapshots of a lattice run into cluster tables, and compares all runs |
+
+## The LAMMPS example
+
+With the plugin built (see [`src/lammps/README.md`](../../src/lammps/README.md)), from this
+directory:
+
+```bash
+mpirun -np 8 lmp -in in.radical -var plugin /path/to/polyreactplugin.so -var mechanism atrp -var xl 0.08
+```
+
+Variables (`-var name value`): `mechanism` (`atrp` or `frp`), `rf` (reaction file, default
+`<mechanism>.cfg`), `cells` (FCC cells per box edge, 4 × cells³ beads; default 20, i.e. 32,000),
+`xl` (cross-linker fraction, default 0.04), `init` (initiator fraction, default 0.002), `seed`,
+`stop` (vinyl conversion at which the run ends, default 0.96), `out` (steps between output lines)
+and `tag` (name of the output files `log_<tag>.lammps` and `final_<tag>.data`). The thermo output
+gives the vinyl conversion, the radicals, the bond tally and the molecule statistics of the fix.
+
+## The comparison
+
+The networks are formed in three models with the same chemistry and compared at equal vinyl
+conversion:
 
 | Model | Module | Space and motion | Partner of a reaction attempt |
 |:--|:--|:--|:--|
 | 3dbfm | [3dbfm](../../src/3dbfm/README.md) | cubic lattice, bond fluctuation moves (the model of the paper) | one of the 54 nearby lattice positions, at random |
 | statistical | [statistical](../../src/statistical/README.md) | none: every unit can meet every other | any unit, with the rates of the elementary reactions |
-| LAMMPS | [lammps](../../src/lammps/README.md), [`examples/radical`](../../src/lammps/examples/radical) | Kremer–Grest melt, Langevin dynamics | one neighbor within 1.2 σ, at random, every 20 steps (`partner random`) |
+| LAMMPS | [lammps](../../src/lammps/README.md), `in.radical` | Kremer–Grest melt, Langevin dynamics | one neighbor within 1.2 σ, at random, every 20 steps (`partner random`) |
 
 All three use the units, structural types and reaction categories of the 3dbfm module (the LAMMPS
 reaction files reproduce its transition table), 0.2 % initiator, a cross-linker fraction [X] of
@@ -19,14 +49,7 @@ quantities at equal conversion are compared. In LAMMPS, ATRP runs by default wit
 rate constants to keep runs affordable; `--rates paper` runs it with the paper's values, to check
 that the structure does not depend on this choice.
 
-| File | Purpose |
-|:--|:--|
-| `cases.py` | writes the job lists: one bash command per run |
-| `run_job.sh` | runs one line of a job list (the line number, or `$SLURM_ARRAY_TASK_ID`) |
-| `slurm_lattice.sbatch`, `slurm_md.sbatch` | SLURM job arrays for the lattice runs (one core each) and the LAMMPS runs (one node each) |
-| `analyze.py` | turns the PSF snapshots of a lattice run into cluster tables, and compares all runs |
-
-## Runs
+### Runs
 
 The full comparison is meant for a cluster. Build the toolkit and the plugin there (see the
 [repository README](../../README.md) and [`src/lammps/README.md`](../../src/lammps/README.md)), then
@@ -64,7 +87,7 @@ the same time; the statistical model takes seconds; LAMMPS ATRP with 8 % cross-l
 after 440,000 steps in about twenty minutes. The paper size is about three times larger, and the
 last part of the conversion up to 0.96 is the slowest.
 
-## Analysis
+### Analysis
 
 ```bash
 python3 $REPO/examples/example_5/analyze.py compare . > comparison.md

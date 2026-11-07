@@ -1,6 +1,7 @@
 # Radical copolymerization of monovinyl monomers and divinyl cross-linkers in a Kremer-Grest melt
 # with fix poly/react: the chemistry of the 3dbfm module and the composition of Zhang et al.,
-# Macromolecules 2025, 58, 3168. Each bead is one monomer unit (types: see ../../README.md).
+# Macromolecules 2025, 58, 3168. Each bead is one monomer unit (types: see
+# src/lammps/README.md).
 #
 #   mpirun -np 8 lmp -in in.radical -var plugin /path/to/polyreactplugin.so -var mechanism frp
 #

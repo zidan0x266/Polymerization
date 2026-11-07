@@ -25,7 +25,7 @@ their own work.
 |:--|:--|:--|:--:|:--:|
 | On-lattice: 3D bond fluctuation model | reactive Monte Carlo on a cubic lattice; free radical (FRP) and atom transfer radical (ATRP) polymerization | [**3dbfm**](src/3dbfm/README.md) | [example_1](examples/example_1/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
 | Random-walk packing | precursor chains (self-avoiding random walks on an FCC lattice) and cross-linkers packed into a box as the starting point of end-linking simulations in LAMMPS | [**randomwalk**](src/randomwalk/README.md) | [example_2](examples/example_2/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
-| On-lattice: dynamic lattice liquid model | reactive Monte Carlo with cooperative moves for dense systems | **dll** | — | ![in preparation](https://img.shields.io/badge/in%20preparation-orange) |
+| On-lattice: dynamic lattice liquid model | reactive Monte Carlo with cooperative moves on a fully occupied lattice; motion of chains and solvent available, reactions in preparation | [**dll**](src/dll/README.md) | [example_3](examples/example_3/README.md) | ![on-going](https://img.shields.io/badge/on--going-yellow) |
 | Pure statistical model | coordinate-free stochastic simulation of the reaction kinetics | **statistical** | — | ![in preparation](https://img.shields.io/badge/in%20preparation-orange) |
 | Coarse-grained model | reactive coarse-grained molecular dynamics as a fix for LAMMPS | **lammps** | — | ![in preparation](https://img.shields.io/badge/in%20preparation-orange) |
 
@@ -110,6 +110,11 @@ where it was used for the following studies:
    mechanisms of amorphous polyethylene under tensile loading. In *Supplemental Proceedings:
    Materials Fabrication, Properties, Characterization, and Modeling* (TMS 2011); Wiley, **2011**;
    pp 789–794. [10.1002/9781118062142.ch95](https://doi.org/10.1002/9781118062142.ch95)
+
+The dll module implements, from the published descriptions, the dynamic lattice liquid model of
+**Prof. Tadeusz Pakula** and its application to polymerization by **Piotr Polanowski, Jeremiasz
+K. Jeszka and co-workers, Lodz University of Technology, Poland** (references in the
+[module README](src/dll/README.md)).
 
 The reactive extensions and this version were developed in the group of Prof. Venkat Ganesan,
 The University of Texas at Austin, with support from the Robert A. Welch Foundation (F-1599) and

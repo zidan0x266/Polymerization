@@ -14,14 +14,13 @@ std::expected<void, std::string> validate(const Packing& packing, AngleSet angle
 
   FccLattice lattice(packing.cells);
   const int extent = lattice.extent();
-  const auto modulo = [extent](int c) { return ((c % extent) + extent) % extent; };
   for (std::size_t i = 0; i < packing.size(); ++i) {
     const Vec3i p = packing.beads[i];
     if (((p.x + p.y + p.z) & 1) != 0) return fail(std::format("bead {} is not on a lattice site", i + 1));
     if (!packing.is_chain_bead(i) && (p.x < 0 || p.y < 0 || p.z < 0 || p.x >= extent || p.y >= extent || p.z >= extent)) {
       return fail(std::format("cross-linker {} lies outside the box", i + 1));
     }
-    const Site s = lattice.site({modulo(p.x), modulo(p.y), modulo(p.z)});
+    const Site s = lattice.site(lattice.wrap_any(p));
     if (lattice.occupied(s)) return fail(std::format("bead {} sits on an occupied site", i + 1));
     lattice.occupy(s);
   }

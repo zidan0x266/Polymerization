@@ -22,3 +22,11 @@ add_test(NAME randomwalk.unit COMMAND rw_tests)
 
 add_test(NAME randomwalk.smoke
   COMMAND rw_pack ${POLY_EXAMPLES}/example_2/smoke_small.ini directory=${CMAKE_BINARY_DIR}/smoke/randomwalk seed=3)
+
+# ---- dll ----------------------------------------------------------------------------------------
+add_executable(dll_tests dll/test_main.cpp)
+target_link_libraries(dll_tests PRIVATE poly::dll poly_warnings)
+add_test(NAME dll.unit COMMAND dll_tests)
+
+add_test(NAME dll.smoke
+  COMMAND dll_react ${POLY_EXAMPLES}/example_3/smoke_small.ini directory=${CMAKE_BINARY_DIR}/smoke/dll seed=3)

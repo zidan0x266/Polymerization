@@ -32,6 +32,9 @@ frp_X*/
 config.lmp
 endlink_No*/
 smoke_rw/
+smoke_dll/
+dll_*/
+*.lammpstrj
 prepare/
 reaction/
 log.lammps

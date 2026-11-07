@@ -1,0 +1,77 @@
+# Radical copolymerization of monovinyl monomers and divinyl cross-linkers in a Kremer-Grest melt
+# with fix poly/react: the chemistry of the 3dbfm module and the composition of Zhang et al.,
+# Macromolecules 2025, 58, 3168. Each bead is one monomer unit (types: see ../../README.md).
+#
+#   mpirun -np 8 lmp -in in.radical -var plugin /path/to/polyreactplugin.so -var mechanism frp
+#
+# Variables (-var name value): plugin, mechanism (atrp | frp), rf (reaction file, default
+# <mechanism>.cfg), cells (FCC cells per box edge, 4 cells^3 beads), xl (cross-linker fraction),
+# init (initiator fraction), seed, stop (vinyl conversion at which the run ends), out (steps between
+# output lines), tag (name of the output files)
+
+variable plugin index polyreactplugin.so
+variable mechanism index atrp
+variable rf index ${mechanism}.cfg
+variable cells index 20
+variable xl index 0.04
+variable init index 0.002
+variable seed index 12345
+variable stop index 0.96
+variable out index 200
+variable tag index ${mechanism}
+
+plugin load ${plugin}
+log log_${tag}.lammps
+
+units lj
+atom_style angle
+lattice fcc 0.85
+region box block 0 ${cells} 0 ${cells} 0 ${cells}
+create_box 11 box bond/types 1 angle/types 1 extra/bond/per/atom 4 extra/angle/per/atom 8 &
+    extra/special/per/atom 8
+labelmap atom 1 MON 2 PRI 3 ONE 4 TWO 5 THR 6 FOU 7 FIV 8 SIX 9 SEV 10 EIG 11 INI
+create_atoms 1 box
+mass * 1.0
+
+# cross-linkers, then initiators: dormant for FRP, radicals from the start for ATRP (activation
+# and deactivation implicit), as in the 3dbfm module; fractions of all beads
+set type MON type/ratio THR ${xl} ${seed}
+variable ratio equal ${init}/(1.0-${xl})
+variable iseed equal ${seed}+1
+if "${mechanism} == frp" then "set type MON type/ratio INI ${ratio} ${iseed}" &
+  else "set type MON type/ratio PRI ${ratio} ${iseed}"
+
+# Kremer-Grest model
+special_bonds fene
+pair_style lj/cut 1.122462048309373
+pair_coeff * * 1.0 1.0
+pair_modify shift yes
+bond_style fene
+bond_coeff 1 30.0 1.5 1.0 1.0
+angle_style cosine
+angle_coeff 1 1.5
+neighbor 0.4 bin
+comm_modify cutoff 2.0             # reaction cutoff + skin
+velocity all create 1.0 ${seed} loop geom
+fix lang all langevin 1.0 1.0 1.0 ${seed}
+fix nve all nve
+timestep 0.005
+thermo 1000
+run 2000                           # melt the lattice
+
+# vinyl conversion as in the lattice modules: an initiator counts as one consumed vinyl
+reset_timestep 0
+group xl type THR
+variable nx0 equal $(count(xl))
+compute types all count/type atom
+variable cv equal 1.0-(c_types[1]+2*c_types[5]+c_types[6]+c_types[7])/(atoms+v_nx0)
+variable radicals equal c_types[2]+c_types[3]+c_types[6]+c_types[8]+2*c_types[9]
+
+fix react all poly/react ${rf} ${seed} partner random
+fix stop all halt ${out} v_cv > ${stop} error continue
+thermo_style custom step time v_cv v_radicals f_react[3] f_react[4] f_react[5] f_react[6] &
+    f_react[7] f_react[8] f_react[10] f_react[11] f_react[12]
+thermo_modify norm no
+thermo ${out}
+run 1000000000 upto
+write_data final_${tag}.data nocoeff

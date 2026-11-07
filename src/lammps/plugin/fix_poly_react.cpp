@@ -77,8 +77,8 @@ int dedup(int nstart, int nstop, tagint *copy)
 FixPolyReact::FixPolyReact(LAMMPS *lmp, int narg, char **arg) :
     Fix(lmp, narg, arg), random_(nullptr), list_(nullptr), random_partner_(false), nearest_(false),
     functionality_index_(-1), max_per_check_(-1), cutoff_(0.0), cutsq_(0.0), commflag_(0),
-    special_depth_(3), angles_(false), log_(nullptr), total_(0), last_(0), bonds_(0), cycles_(0),
-    nangles_(0), overflow_(0)
+    special_depth_(3), angles_(false), log_(nullptr), total_(0), last_(0), tally_{},
+    stats_step_(-1), stats_bonds_(-1), stats_{}, nangles_(0), overflow_(0)
 {
   if (narg < 5) utils::missing_cmd_args(FLERR, "fix poly/react", error);
   if (atom->molecular != Atom::MOLECULAR || !atom->avec->bonds_allow)
@@ -205,7 +205,7 @@ FixPolyReact::FixPolyReact(LAMMPS *lmp, int narg, char **arg) :
   force_reneighbor = 1;
   next_reneighbor = -1;
   vector_flag = 1;
-  size_vector = 4 + static_cast<int>(nreactions);
+  size_vector = NHEAD + static_cast<int>(nreactions);
   global_freq = 1;
   extvector = 0;
   restart_global = 1;
@@ -342,11 +342,14 @@ void FixPolyReact::build_molecules()
   MPI_Allreduce(&maxtag, &maxall, 1, MPI_LMP_TAGINT, MPI_MAX, world);
   parent_.resize(static_cast<std::size_t>(maxall) + 1);
   std::iota(parent_.begin(), parent_.end(), tagint(0));
+  degree_.assign(parent_.size(), 0);
 
+  // every bond once: with newton_bond off, both atoms store it
   std::vector<tagint> mine;
   for (int i = 0; i < nlocal; ++i)
     for (int k = 0; k < atom->num_bond[i]; ++k) {
       if (atom->bond_type[i][k] <= 0) continue;    // turned off
+      if (!force->newton_bond && tag[i] > atom->bond_atom[i][k]) continue;
       mine.push_back(tag[i]);
       mine.push_back(atom->bond_atom[i][k]);
     }
@@ -364,7 +367,12 @@ void FixPolyReact::build_molecules()
   std::vector<tagint> bonds(static_cast<std::size_t>(total));
   MPI_Allgatherv(mine.data(), n, MPI_LMP_TAGINT, bonds.data(), counts.data(), displs.data(),
                  MPI_LMP_TAGINT, world);
-  for (std::size_t k = 0; k + 1 < bonds.size(); k += 2) unite(bonds[k], bonds[k + 1]);
+  for (std::size_t k = 0; k + 1 < bonds.size(); k += 2) {
+    unite(bonds[k], bonds[k + 1]);
+    ++degree_[bonds[k]];
+    ++degree_[bonds[k + 1]];
+  }
+  stats_step_ = -1;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -376,6 +384,7 @@ tagint FixPolyReact::root(tagint t)
     parent_.resize(static_cast<std::size_t>(t) + 1);
     std::iota(parent_.begin() + static_cast<std::ptrdiff_t>(old), parent_.end(),
               static_cast<tagint>(old));
+    degree_.resize(parent_.size(), 0);
   }
   while (parent_[t] != t) {
     parent_[t] = parent_[parent_[t]];
@@ -517,9 +526,20 @@ void FixPolyReact::post_integrate()
     ++last_;
     ++counts_[p.reaction];
     if (p.bond) {
+      // as in the lattice modules: a bead without bonds is a monomer
+      const bool free_center = degree_[p.center] == 0, free_partner = degree_[p.partner] == 0;
+      if (intra)
+        ++tally_[INTRAMOLECULAR];
+      else if (free_center && free_partner)
+        ++tally_[MONOMER_MONOMER];
+      else if (!free_center && !free_partner)
+        ++tally_[POLYMER_POLYMER];
+      else
+        ++tally_[POLYMER_MONOMER];
       unite(p.center, p.partner);
+      ++degree_[p.center];
+      ++degree_[p.partner];
       ++nbonds;
-      if (intra) ++cycles_;
       created_.emplace(std::minmax(p.center, p.partner), angle_type_[p.reaction]);
     }
 
@@ -532,7 +552,6 @@ void FixPolyReact::post_integrate()
   }
   if (log_) fflush(log_);
   total_ += last_;
-  bonds_ += nbonds;
   atom->nbonds += nbonds;
 
   // ghost atoms get the new types at the reneighboring that follows right away
@@ -845,26 +864,69 @@ bool FixPolyReact::same_residue(int i, int j) const
   return atom->molecule_flag && atom->molecule[i] != 0 && atom->molecule[i] == atom->molecule[j];
 }
 
+/* ---------------------------------------------------------------------- */
+
+bigint FixPolyReact::bonds_created() const
+{
+  return tally_[0] + tally_[1] + tally_[2] + tally_[3];
+}
+
 /* ----------------------------------------------------------------------
-   1 reactions in all, 2 in the last check, 3 bonds created, 4 bonds within a molecule
-   (rings), 5... reactions per reaction section
+   sizes of the molecules of 2 or more atoms, from the union-find; computed when asked for
+   and kept until the step or the bonds change
+------------------------------------------------------------------------- */
+
+void FixPolyReact::molecule_statistics()
+{
+  if (stats_step_ == update->ntimestep && stats_bonds_ == bonds_created()) return;
+  stats_step_ = update->ntimestep;
+  stats_bonds_ = bonds_created();
+
+  std::vector<tagint> size(parent_.size(), 0);
+  for (tagint t = 1; t < static_cast<tagint>(parent_.size()); ++t) ++size[root(t)];
+  double n = 0.0, s1 = 0.0, s2 = 0.0, largest = 0.0;
+  for (const tagint s : size) {
+    if (s < 2) continue;
+    const auto l = static_cast<double>(s);
+    n += 1.0;
+    s1 += l;
+    s2 += l * l;
+    largest = std::max(largest, l);
+  }
+  stats_[0] = n;
+  stats_[1] = n > 0.0 ? s1 / n : 0.0;
+  stats_[2] = s1 > 0.0 ? s2 / s1 : 0.0;
+  stats_[3] = largest;
+  stats_[4] = s1 > largest ? (s2 - largest * largest) / (s1 - largest) : 0.0;
+}
+
+/* ----------------------------------------------------------------------
+   1 reactions in all, 2 in the last check, 3 bonds created, of which 4 monomer-monomer,
+   5 polymer-monomer, 6 polymer-polymer, 7 within a molecule (rings); molecules of 2 or more
+   atoms: 8 number, 9 Mn, 10 Mw, 11 largest, 12 Mw without the largest (reduced degree of
+   polymerization); 13... reactions per reaction section
 ------------------------------------------------------------------------- */
 
 double FixPolyReact::compute_vector(int n)
 {
   if (n == 0) return static_cast<double>(total_);
   if (n == 1) return static_cast<double>(last_);
-  if (n == 2) return static_cast<double>(bonds_);
-  if (n == 3) return static_cast<double>(cycles_);
-  return static_cast<double>(counts_[n - 4]);
+  if (n == 2) return static_cast<double>(bonds_created());
+  if (n < 7) return static_cast<double>(tally_[n - 3]);
+  if (n < NHEAD) {
+    molecule_statistics();
+    return stats_[n - 7];
+  }
+  return static_cast<double>(counts_[n - NHEAD]);
 }
 
 /* ---------------------------------------------------------------------- */
 
 void FixPolyReact::write_restart(FILE *fp)
 {
-  std::vector<double> list{static_cast<double>(total_), static_cast<double>(bonds_),
-                           static_cast<double>(cycles_), static_cast<double>(counts_.size())};
+  std::vector<double> list{static_cast<double>(total_)};
+  for (const bigint t : tally_) list.push_back(static_cast<double>(t));
+  list.push_back(static_cast<double>(counts_.size()));
   for (const bigint c : counts_) list.push_back(static_cast<double>(c));
   if (comm->me == 0) {
     const int size = static_cast<int>(list.size() * sizeof(double));
@@ -879,11 +941,10 @@ void FixPolyReact::restart(char *buf)
 {
   const auto *list = reinterpret_cast<const double *>(buf);
   total_ = static_cast<bigint>(list[0]);
-  bonds_ = static_cast<bigint>(list[1]);
-  cycles_ = static_cast<bigint>(list[2]);
-  const auto n = static_cast<std::size_t>(list[3]);
+  for (std::size_t k = 0; k < tally_.size(); ++k) tally_[k] = static_cast<bigint>(list[1 + k]);
+  const auto n = static_cast<std::size_t>(list[5]);
   if (n == counts_.size()) {
-    for (std::size_t r = 0; r < n; ++r) counts_[r] = static_cast<bigint>(list[4 + r]);
+    for (std::size_t r = 0; r < n; ++r) counts_[r] = static_cast<bigint>(list[6 + r]);
   } else if (comm->me == 0) {
     error->warning(FLERR, "Fix poly/react: the restart has {} reactions, the reaction file {}; "
                    "the counts per reaction start from zero", n, counts_.size());
@@ -894,5 +955,6 @@ void FixPolyReact::restart(char *buf)
 
 double FixPolyReact::memory_usage()
 {
-  return static_cast<double>((parent_.capacity() + copy_.capacity()) * sizeof(tagint));
+  return static_cast<double>((parent_.capacity() + copy_.capacity()) * sizeof(tagint) +
+                             degree_.capacity() * sizeof(int));
 }

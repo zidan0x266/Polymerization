@@ -10,11 +10,14 @@ sets of reactions in the format of ChemLab (refs. 1, 2).
 decides the reactions, the reaction files of free radical (FRP) and atom transfer radical
 polymerization (ATRP) with the chemistry of the [3dbfm module](../3dbfm/README.md), and the fix
 itself as a LAMMPS plugin, for association and unimolecular reactions on any number of processors.
-Next:
+Phase 3 is under way: the fix reports the bond tally and the molecule statistics of the lattice
+modules, [`examples/radical`](examples/radical) forms the FRP and ATRP networks of ref. 3 in a
+Kremer–Grest melt, and [example 5](../../examples/example_5/README.md) compares them with the 3dbfm
+and statistical modules; the comparison runs on a cluster. Next:
 
 | Phase | Content |
 |:--|:--|
-| 3 | FRP and ATRP against the 3dbfm and statistical modules (Macromolecules 2025 cases) |
+| 3 | FRP and ATRP against the 3dbfm and statistical modules (Macromolecules 2025 cases): results of the comparison |
 | 4 | step growth: AB₂ hyperbranched polymers (ref. 2), A₂ + B₃, end-linking |
 | 5 | reversible reactions and byproducts, explicit ATRP activation, performance |
 
@@ -104,7 +107,7 @@ plugin load /path/to/polyreactplugin.so
 ...
 labelmap atom 1 MON 2 PRI 3 ONE 4 TWO 5 THR 6 FOU 7 FIV 8 SIX 9 SEV 10 EIG 11 INI
 fix react all poly/react frp.cfg 2025 every 20 log reactions.txt
-thermo_style custom step f_react[1] f_react[3] f_react[4] bonds angles
+thermo_style custom step f_react[1] f_react[3] f_react[7] f_react[10] f_react[12] bonds angles
 ```
 
 ```
@@ -146,18 +149,30 @@ At every check, right after the positions are updated:
    type of its group (if an angle style is defined), for `newton_bond` on and off. LAMMPS then
    reneighbors at once.
 
-Molecules are followed with a union-find over atom IDs that every processor keeps. The fix
-provides a global vector for `thermo` and other commands:
+Molecules are followed with a union-find over atom IDs that every processor keeps, together with
+the number of bonds of every atom. The fix provides a global vector for `thermo` and other
+commands:
 
 | Element | Meaning |
 |:--|:--|
 | 1 | reactions in all |
 | 2 | reactions in the last check |
-| 3 | bonds created |
-| 4 | bonds created within a molecule (rings) |
-| 5, 6, … | reactions of each `[reaction_…]` section, in the order of the file |
+| 3 | bonds created, of which: |
+| 4 | between two beads without bonds (monomer–monomer) |
+| 5 | between a bead with and a bead without bonds (polymer–monomer) |
+| 6 | between beads with bonds in different molecules (polymer–polymer) |
+| 7 | within a molecule (rings) |
+| 8 | molecules of two or more atoms |
+| 9, 10 | their number- and weight-average size Mn and Mw, in atoms |
+| 11 | the largest molecule |
+| 12 | Mw without the largest molecule, the reduced degree of polymerization, whose maximum marks the gel point |
+| 13, 14, … | reactions of each `[reaction_…]` section, in the order of the file |
 
-The counts are kept in restart files; after `read_restart`, define the fix again with the same ID.
+Elements 4–7 classify new bonds as the lattice modules do. Elements 8–12 count all atoms,
+are computed only when asked for, and take a pass over all atoms each time.
+
+The counts (elements 1–7 and 13 on) are kept in restart files; after `read_restart`, define the
+fix again with the same ID.
 As with other LAMMPS fixes, the state of the random numbers is not kept.
 
 Not yet supported: dissociation and exchange reactions (phase 5) and `run_style respa`. Bonds
@@ -195,6 +210,24 @@ and its type is its structural unit in the original code:
 The reactions are listed in the order of the reaction categories of the 3dbfm module (propagation
 1–20, termination 21–35, then initiation), so the counts per reaction compare column by column.
 
+[`examples/radical`](examples/radical) runs these reactions in a Kremer–Grest melt (FENE bonds,
+WCA repulsion, cosine bending with k = 1.5, ρ = 0.85, Langevin thermostat, Δt = 0.005, as in ref. 3),
+with the composition of the 3dbfm examples: 0.2 % initiator and a cross-linker fraction `xl`. The
+beads start on an FCC lattice and are melted; a check every 20 steps tries one random partner per
+radical within 1.2 σ. The vinyl conversion is computed from the bead types as in the lattice
+modules, the run stops at the conversion `stop`, and the thermo output gives the conversion, the
+radicals, the bond tally and the molecule statistics:
+
+```bash
+cd src/lammps/examples/radical
+mpirun -np 8 lmp -in in.radical -var plugin /path/to/polyreactplugin.so -var mechanism atrp -var xl 0.08
+```
+
+`atrp.cfg` and `frp.cfg` were written by `polyreact_preset`, with the rate constants of ref. 3 for
+FRP (`k_init` = 10⁻⁵, `k_p1` = 0.5, `k_p2` = 0.25, `k_term` = 0.95) and ten times those of ref. 3
+for ATRP (`k_p1` = 0.05, `k_p2` = 0.025), per check, which keeps the runs affordable;
+`atrp_paper.cfg` has the ATRP rate constants of ref. 3 (`-var rf atrp_paper.cfg`).
+
 ## Checks
 
 The unit tests ([`tests`](tests)) check the parsing of equations and files, the matching of
@@ -211,9 +244,9 @@ processors (also checked on 8) with systems whose outcome is known:
 |:--|:--|
 | pairs | 1000 isolated A–B pairs, also across periodic and processor boundaries: bonds only between partners, with the new types |
 | probabilities | the probability per check of the pair reaction and of the competing decay B → D of the same bead, from 5 runs, both partner modes, within 4σ of the exact value (observed within 1.3σ) |
-| triplets | B–A–B: A takes one bond per check up to its functionality window and closes the angle B–A–B |
-| squares | two bonded dimers side by side: the second bond closes a ring and is refused unless the reaction is intramolecular, also when both bonds are proposed in the same check; with `intramolecular = true`, one ring per square is counted |
-| kg | a Kremer–Grest melt polymerizing with the FRP preset for 3000 steps: the numbers of bonds and angles, and the pair, bond and angle energies, equal (to 1e-10) those of the final configuration read again by LAMMPS, which builds the special lists from scratch; with FENE special bonds, with 1-3 and 1-4 weights, and with `newton_bond` on and off |
+| triplets | B–A–B: A takes one bond per check up to its functionality window and closes the angle B–A–B; the first bonds are counted as monomer–monomer, the second as polymer–monomer, and the molecule statistics are exact |
+| squares | two bonded dimers side by side: the second bond closes a ring and is refused unless the reaction is intramolecular, also when both bonds are proposed in the same check; the first bond is counted as polymer–polymer and, with `intramolecular = true`, the second as a ring |
+| kg | a Kremer–Grest melt polymerizing with the FRP preset for 3000 steps: the numbers of bonds and angles, and the pair, bond and angle energies, equal (to 1e-10) those of the final configuration read again by LAMMPS, which builds the special lists from scratch; with FENE special bonds, with 1-3 and 1-4 weights, and with `newton_bond` on and off. The bond tally adds up to the bonds created, and the molecule statistics equal those of the bonds in the data file |
 
 ## Code structure
 
@@ -229,6 +262,7 @@ plugin/
   polyreact_plugin.cpp  registration with LAMMPS
 tests/                unit tests
 tests/plugin/         LAMMPS inputs, reaction files and the test driver run_tests.py
+examples/radical/     FRP and ATRP networks in a Kremer-Grest melt
 ```
 
 The plugin code compiles as C++17 (the engine headers it includes are C++17) and links the rule

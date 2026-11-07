@@ -16,7 +16,7 @@ comm_modify cutoff 3.0
 fix r all poly/react ${rf} ${seed} partner ${partner} functionality f
 fix integ all nve
 compute t all count/type atom
-thermo_style custom step f_r[1] f_r[2] f_r[3] f_r[4] f_r[5] c_t[1] c_t[2] bonds angles
+thermo_style custom step f_r[1] f_r[2] f_r[3] f_r[4] f_r[5] f_r[6] f_r[7] f_r[8] f_r[9] f_r[10] f_r[11] f_r[12] f_r[13] c_t[1] c_t[2] bonds angles
 thermo_modify norm no
 thermo 1
 run ${steps}

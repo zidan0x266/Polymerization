@@ -26,6 +26,7 @@ FixStyle(poly/react,FixPolyReact);
 
 #include "fix.h"
 
+#include <array>
 #include <cstdio>
 #include <map>
 #include <memory>
@@ -89,12 +90,19 @@ class FixPolyReact : public Fix {
   std::vector<int> bond_type_;   ///< per reaction: bond type of the new bond (0: none)
   std::vector<int> angle_type_;  ///< per reaction: angle type of the angles it closes (0: none)
 
-  /// Molecules as a union-find over atom IDs, the same on every processor.
+  /// Molecules as a union-find over atom IDs and the bonds of every atom, the same on every
+  /// processor.
   std::vector<tagint> parent_;
+  std::vector<int> degree_;
 
   // statistics
-  bigint total_, last_, bonds_, cycles_;
-  std::vector<bigint> counts_;  ///< per reaction
+  enum { MONOMER_MONOMER, POLYMER_MONOMER, POLYMER_POLYMER, INTRAMOLECULAR };
+  static constexpr int NHEAD = 12;  ///< elements of the global vector before the counts per reaction
+  bigint total_, last_;
+  std::array<bigint, 4> tally_;  ///< new bonds by what they connect; a bead without bonds is a monomer
+  std::vector<bigint> counts_;   ///< per reaction
+  bigint stats_step_, stats_bonds_;
+  std::array<double, 5> stats_;  ///< molecules of 2 or more atoms: number, Mn, Mw, largest, Mw without the largest
 
   // bonds created in the current check: (smaller ID, larger ID) -> angle type
   std::map<std::pair<tagint, tagint>, int> created_;
@@ -107,6 +115,8 @@ class FixPolyReact : public Fix {
   tagint root(tagint t);
   void unite(tagint a, tagint b);
   void build_molecules();
+  [[nodiscard]] bigint bonds_created() const;
+  void molecule_statistics();
   void propose(int i, int j, double rsq, std::vector<Proposal> &out);
   void apply(const Proposal &p);
   void add_bond(int i, tagint other, int type);

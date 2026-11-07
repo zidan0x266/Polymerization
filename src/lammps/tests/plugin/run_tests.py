@@ -10,12 +10,14 @@ With --mpirun "" (a serial LAMMPS) only 1 processor is used.
 
   pairs     isolated A-B pairs: bonds only between partners, with the new types; the probability per
             check of the pair reaction and of the competing decay B -> D (5 seeds, both partner modes)
-  triplets  B-A-B: A takes one bond per check up to its functionality and closes the angle B-A-B
+  triplets  B-A-B: A takes one bond per check up to its functionality and closes the angle B-A-B;
+            the first bonds join two monomers, the second a polymer and a monomer
   squares   two bonded dimers: the second bond of a square closes a ring, refused unless the reaction
             is intramolecular, also when both bonds are proposed in the same check
   kg        Kremer-Grest melt with the FRP preset: bonds, angles and pair, bond and angle energies
             equal those of the final configuration read again, with special lists built by LAMMPS
-            (1-2 neighbors only, and 1-2 to 1-4 neighbors with newton_bond on and off)
+            (1-2 neighbors only, and 1-2 to 1-4 neighbors with newton_bond on and off); the
+            molecule statistics of the fix equal those of the bonds in the data file
 """
 import argparse
 import math
@@ -134,6 +136,36 @@ def require(condition, message):
         raise Failure(message)
 
 
+def check_thermo(log, expected):
+    """The last thermo row has these values, e.g. {"f_r[4]": 1000}."""
+    row = thermo(log)[-1]
+    for key, value in expected.items():
+        require(math.isclose(row[key], value, rel_tol=1e-9), f"{key} = {row[key]:g}, expected {value:g}")
+
+
+def molecules(nbeads, bonds):
+    """Number, Mn, Mw, largest and Mw without the largest of the molecules of 2 or more beads."""
+    parent = list(range(nbeads + 1))
+
+    def root(t):
+        while parent[t] != t:
+            parent[t] = parent[parent[t]]
+            t = parent[t]
+        return t
+
+    for a, b in bonds:
+        ra, rb = root(a), root(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+    size = defaultdict(int)
+    for t in range(1, nbeads + 1):
+        size[root(t)] += 1
+    sizes = [s for s in size.values() if s >= 2]
+    n, s1, s2, top = len(sizes), sum(sizes), sum(s * s for s in sizes), max(sizes, default=0)
+    return {"f_r[8]": n, "f_r[9]": s1 / n if n else 0, "f_r[10]": s2 / s1 if s1 else 0, "f_r[11]": top,
+            "f_r[12]": (s2 - top * top) / (s1 - top) if s1 > top else 0}
+
+
 def check_pairs(path):
     types, bonds, _ = read_data(path)
     bonded = set()
@@ -221,16 +253,28 @@ class Runner:
             print(f"{np} processor(s):")
             self.test("pairs", lambda: check_pairs(self.small(np, "pairs.data", "pairs.rf", f"pairs_{np}")[0]))
             for partner in ("all", "random"):
-                self.test(f"triplets, partner {partner}", lambda: check_triplets(
-                    self.small(np, "triplets.data", "triplets.rf", f"triplets_{np}_{partner}", partner=partner, steps=4)[0]))
+                self.test(f"triplets, partner {partner}", lambda: self.triplets(np, partner))
             for intra in ("no", "yes"):
-                self.test(f"squares, intramolecular {intra}", lambda: check_squares(
-                    self.small(np, "squares.data", f"squares_{intra}.rf", f"squares_{np}_{intra}", steps=3)[0], intra == "yes"))
+                self.test(f"squares, intramolecular {intra}", lambda: self.squares(np, intra))
             for partner in ("all", "random"):
                 self.test(f"probabilities, partner {partner}", lambda: self.rates(np, partner))
             for special, newton in (("fene", "on"), ("weights", "on"), ("weights", "off")):
                 self.test(f"kg, special {special}, newton_bond {newton}", lambda: self.kg(np, special, newton))
         return self.failures
+
+    def triplets(self, np, partner):
+        data, log = self.small(np, "triplets.data", "triplets.rf", f"triplets_{np}_{partner}", partner=partner, steps=4)
+        m = N ** 3
+        check_thermo(log, {"f_r[3]": 2 * m, "f_r[4]": m, "f_r[5]": m, "f_r[6]": 0, "f_r[7]": 0, "f_r[8]": m,
+                           "f_r[9]": 3, "f_r[10]": 3, "f_r[11]": 3, "f_r[12]": 3})
+        return check_triplets(data) + ", bonds monomer-monomer then polymer-monomer"
+
+    def squares(self, np, intra):
+        data, log = self.small(np, "squares.data", f"squares_{intra}.rf", f"squares_{np}_{intra}", steps=3)
+        m = N ** 3
+        rings = m if intra == "yes" else 0
+        check_thermo(log, {"f_r[4]": 0, "f_r[5]": 0, "f_r[6]": m, "f_r[7]": rings, "f_r[8]": m, "f_r[10]": 4})
+        return check_squares(data, intra == "yes") + f", {rings} rings"
 
     def rates(self, np, partner):
         """Per check, an intact pair reacts with p_ab or B decays with p_dec; when both pass, one of
@@ -242,8 +286,8 @@ class Runner:
             rows = thermo(log)
             for prev, cur in zip(rows, rows[1:]):
                 n += prev["c_t[2]"]
-                ab += cur["f_r[5]"] - prev["f_r[5]"]
-                dec += (cur["f_r[1]"] - cur["f_r[5]"]) - (prev["f_r[1]"] - prev["f_r[5]"])
+                ab += cur["f_r[13]"] - prev["f_r[13]"]
+                dec += (cur["f_r[1]"] - cur["f_r[13]"]) - (prev["f_r[1]"] - prev["f_r[13]"])
         report = []
         for name, k, p in (("pair", ab, 0.1 * 0.95 + 0.1 * 0.05 / 2), ("decay", dec, 0.05 * 0.9 + 0.1 * 0.05 / 2)):
             z = (k / n - p) / math.sqrt(p * (1 - p) / n)
@@ -262,7 +306,12 @@ class Runner:
         require(run["Angles"] == again["Angles"], f"angles {run['Angles']} {again['Angles']}")
         for key in ("E_vdwl", "E_bond", "E_angle"):
             require(math.isclose(run[key], again[key], rel_tol=1e-10), f"{key} {run[key]!r} != {again[key]!r}")
-        return f"{run['f_r[1]']:.0f} reactions, {run['Bonds']:.0f} bonds, {run['f_r[4]']:.0f} rings, energies equal"
+        require(sum(run[f"f_r[{k}]"] for k in (4, 5, 6, 7)) == run["f_r[3]"], "the bond tally does not add up")
+        types, bonds, _ = read_data(data)
+        for key, value in molecules(len(types), bonds).items():
+            require(math.isclose(run[key], value, rel_tol=1e-9), f"{key} = {run[key]:g}, data file {value:g}")
+        return (f"{run['f_r[1]']:.0f} reactions, {run['Bonds']:.0f} bonds, {run['f_r[7]']:.0f} rings, "
+                f"{run['f_r[11]']:.0f} in the largest molecule; energies and molecules equal")
 
 
 def main():

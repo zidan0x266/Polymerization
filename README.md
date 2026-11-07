@@ -27,10 +27,14 @@ their own work.
 | Random-walk packing | precursor chains (self-avoiding random walks on an FCC lattice) and cross-linkers packed into a box as the starting point of end-linking simulations in LAMMPS | [**randomwalk**](src/randomwalk/README.md) | [example_2](examples/example_2/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
 | On-lattice: dynamic lattice liquid model | reactive Monte Carlo with cooperative moves on a fully occupied lattice, with solvent; free radical (FRP) and atom transfer radical (ATRP) polymerization | [**dll**](src/dll/README.md) | [example_3](examples/example_3/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
 | Pure statistical model | coordinate-free kinetic Monte Carlo (Gillespie) of the reactions, with or without cyclization; free radical (FRP) and atom transfer radical (ATRP) polymerization | [**statistical**](src/statistical/README.md) | [example_4](examples/example_4/README.md) | ![available](https://img.shields.io/badge/available-brightgreen) |
-| Coarse-grained model | reactive coarse-grained molecular dynamics as a fix for LAMMPS (`fix poly/react`): general reaction rules, starting with free radical (FRP) and atom transfer radical (ATRP) polymerization | [**lammps**](src/lammps/README.md) | — | ![on-going](https://img.shields.io/badge/on--going-yellow) |
+| Coarse-grained model | reactive coarse-grained molecular dynamics as a fix for LAMMPS (`fix poly/react`): general reaction rules, starting with free radical (FRP) and atom transfer radical (ATRP) polymerization | [**lammps**](src/lammps/README.md) | [radical](src/lammps/examples/radical) | ![on-going](https://img.shields.io/badge/on--going-yellow) |
+
+[Example 5](examples/example_5/README.md) forms the FRP and ATRP networks of the 2025 paper in the
+3dbfm, statistical and coarse-grained models and compares them.
 
 Each module keeps its code and README under `src/<module>/`, inputs under
-`examples/example_<n>/` and tests under `tests/<module>/`. Code shared by the modules, such as the
+`examples/example_<n>/` and tests under `tests/<module>/`; the LAMMPS fix, licensed separately, keeps
+its examples and tests in `src/lammps/`. Code shared by the modules, such as the
 random number generator, the configuration-file reader and the FRP/ATRP chemistry of the lattice
 models, is in `src/common/`. All modules are built and tested together from the repository root.
 

@@ -113,8 +113,13 @@ where it was used for the following studies:
 
 The dll module implements, from the published descriptions, the dynamic lattice liquid model of
 **Prof. Tadeusz Pakula** and its application to polymerization by **Piotr Polanowski, Jeremiasz
-K. Jeszka and co-workers, Lodz University of Technology, Poland** (references in the
-[module README](src/dll/README.md)).
+K. Jeszka and co-workers, Lodz University of Technology, Poland**, with whom we used the model
+in the following study (further references in the [module README](src/dll/README.md)):
+
+6. J. Lyu, Y. Gao, Z. Zhang, U. Greiser, P. Polanowski, J. K. Jeszka, K. Matyjaszewski, H. Tai,
+   W. Wang. Monte Carlo Simulations of Atom Transfer Radical (Homo)polymerization of Divinyl
+   Monomers: Applicability of Flory–Stockmayer Theory. *Macromolecules* **2018**, 51, 6673–6681.
+   [10.1021/acs.macromol.8b01630](https://doi.org/10.1021/acs.macromol.8b01630)
 
 The reactive extensions and this version were developed in the group of Prof. Venkat Ganesan,
 The University of Texas at Austin, with support from the Robert A. Welch Foundation (F-1599) and

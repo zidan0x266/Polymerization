@@ -122,8 +122,7 @@ in the following study (further references in the [module README](src/dll/README
    [10.1021/acs.macromol.8b01630](https://doi.org/10.1021/acs.macromol.8b01630)
 
 The reactive extensions and this version were developed in the group of Prof. Venkat Ganesan,
-The University of Texas at Austin, with support from the Robert A. Welch Foundation (F-1599) and
-the National Science Foundation (DMR-2225167).
+McKetta Department of Chemical Engineering, The University of Texas at Austin.
 
 ## License
 

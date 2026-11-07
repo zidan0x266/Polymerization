@@ -35,3 +35,14 @@ add_test(NAME dll.smoke_atrp
 add_test(NAME dll.smoke_frp
   COMMAND dll_react ${POLY_EXAMPLES}/example_3/smoke_react.ini mechanism=frp reaction_partner=all_neighbors
           directory=${CMAKE_BINARY_DIR}/smoke/dll_frp seed=7)
+
+# ---- statistical --------------------------------------------------------------------------------
+add_executable(stat_tests statistical/test_main.cpp)
+target_link_libraries(stat_tests PRIVATE poly::statistical poly_warnings)
+add_test(NAME statistical.unit COMMAND stat_tests)
+
+add_test(NAME statistical.smoke_atrp
+  COMMAND stat_react ${POLY_EXAMPLES}/example_4/smoke_small.ini directory=${CMAKE_BINARY_DIR}/smoke/stat_atrp seed=5)
+add_test(NAME statistical.smoke_frp
+  COMMAND stat_react ${POLY_EXAMPLES}/example_4/smoke_small.ini mechanism=frp cyclization=false
+          directory=${CMAKE_BINARY_DIR}/smoke/stat_frp seed=7)

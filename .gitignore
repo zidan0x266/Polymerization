@@ -34,6 +34,8 @@ endlink_No*/
 smoke_rw/
 smoke_dll/
 smoke_dll_react/
+smoke_stat/
+stat_*/
 dll_*/
 *.lammpstrj
 prepare/

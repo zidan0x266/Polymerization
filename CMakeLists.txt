@@ -84,7 +84,7 @@ add_subdirectory(src/common)
 add_subdirectory(src/3dbfm)
 add_subdirectory(src/randomwalk)
 add_subdirectory(src/dll)
-# add_subdirectory(src/statistical)   # statistical model, to come
+add_subdirectory(src/statistical)
 # src/lammps: reactive CG fix, built inside LAMMPS, to come
 
 if(POLY_BUILD_TESTS)

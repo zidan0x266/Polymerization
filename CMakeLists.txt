@@ -85,7 +85,7 @@ add_subdirectory(src/3dbfm)
 add_subdirectory(src/randomwalk)
 add_subdirectory(src/dll)
 add_subdirectory(src/statistical)
-# src/lammps: reactive CG fix, built inside LAMMPS, to come
+add_subdirectory(src/lammps)      # fix poly/react for LAMMPS (GPL-2.0)
 
 if(POLY_BUILD_TESTS)
   enable_testing()

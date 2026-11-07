@@ -46,3 +46,8 @@ add_test(NAME statistical.smoke_atrp
 add_test(NAME statistical.smoke_frp
   COMMAND stat_react ${POLY_EXAMPLES}/example_4/smoke_small.ini mechanism=frp cyclization=false
           directory=${CMAKE_BINARY_DIR}/smoke/stat_frp seed=7)
+
+# ---- lammps (fix poly/react; GPL-2.0, sources in src/lammps) -------------------------------------
+add_executable(polyreact_tests ${CMAKE_SOURCE_DIR}/src/lammps/tests/test_main.cpp)
+target_link_libraries(polyreact_tests PRIVATE polyreact_core poly_warnings)
+add_test(NAME lammps.unit COMMAND polyreact_tests)

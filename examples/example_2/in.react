@@ -1,0 +1,64 @@
+# End-linking (LAMMPS 30 Sep 2026 or newer, MOLECULE and MC packages). A chain end (type end)
+# and a cross-linker (type xlink) closer than 1.1 bond with probability 1, checked every 5 steps.
+# A reacted end becomes type bead; a cross-linker becomes xlink_full once all four of its sites
+# have reacted. Conversion = new bonds / (4 x number of cross-linkers). Langevin dynamics at
+# T = 1 with damping time 10.
+#
+#   lmp -in in.react                             (in the same directory, after in.prepare)
+#
+# Writes reaction/react_info.dat, reaction/after_reacted.lmp and restart files that alternate
+# between reaction/react.a.restart and reaction/react.b.restart.
+
+variable        data index prepare/after_decomp.lmp
+variable        seed index 241205
+variable        react_steps index 120000000
+variable        ref_t equal 1.0
+
+units           lj
+atom_style      molecular
+boundary        p p p
+read_data       ${data} extra/bond/per/atom 4 extra/special/per/atom 12
+
+bond_style      harmonic
+bond_coeff      1 1000.0 1.0
+special_bonds   lj 0.0 1.0 1.0
+
+pair_style      lj/cut 2.5
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 2.5
+
+timestep        0.005
+shell           mkdir reaction
+
+#------------------------------------------------------------#
+# End-linking with fix bond/create
+#------------------------------------------------------------#
+group           xlinks type xlink
+variable        max_newbonds equal 4*count(xlinks)
+
+reset_timestep  0
+fix             1 all nve
+fix             2 all langevin ${ref_t} ${ref_t} 10.0 $(v_seed+1)
+fix             curing all bond/create 5 end xlink 1.1 1 prob 1.0 ${seed} iparam 2 bead jparam 4 xlink_full
+compute         atomtypes all count/type atom
+variable        nstep equal step
+variable        n_newbonds equal f_curing[2]
+variable        conversion equal f_curing[2]/v_max_newbonds
+variable        atype_1 equal c_atomtypes[1]
+variable        atype_2 equal c_atomtypes[2]
+variable        atype_3 equal c_atomtypes[3]
+variable        atype_4 equal c_atomtypes[4]
+thermo          1000
+thermo_style    custom step temp press f_curing[2] v_conversion c_atomtypes[1] c_atomtypes[2] c_atomtypes[4] c_atomtypes[3]
+thermo_modify   norm yes flush yes
+fix             react_info all print 1000 "${nstep} ${n_newbonds} ${conversion} ${atype_1} ${atype_2} ${atype_3} ${atype_4}" &
+                file reaction/react_info.dat screen no &
+                title "step number_of_new_bonds conversion atype_1 atype_2 atype_3 atype_4"
+restart         100000 reaction/react.a.restart reaction/react.b.restart
+run             ${react_steps}
+write_data      reaction/after_reacted.lmp nocoeff
+print           "end-linking done: conversion $(v_conversion:%.4f)"
+unfix           react_info
+unfix           curing
+unfix           2
+unfix           1

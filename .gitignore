@@ -1,0 +1,50 @@
+# build trees
+build/
+build-*/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+compile_commands.json
+
+# profile-guided optimization data
+pgo/
+*.profraw
+*.profdata
+
+# simulation output
+*.pdb
+*.psf
+*.xyz
+results_*.dat
+structural_*.dat
+propagation_*.dat
+rg_*.dat
+reactype_*.dat
+chainsizes_*.dat
+equilibrated_*.dat
+final_*.dat
+run_config.ini
+ini.dat
+intstate.dat
+smoke/
+atrp_X*/
+frp_X*/
+config.lmp
+endlink_No*/
+smoke_rw/
+prepare/
+reaction/
+log.lammps
+log.cite
+
+# editors and OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# legacy programs: kept locally, never published
+sources/
+
+# editor index caches
+.cache/

@@ -1,0 +1,189 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the paper below and the Macromolecules 2026,
+  Macromolecules 2024 and Soft Matter 2025 papers listed under references.
+title: Polymerization - a simulation toolkit for polymerization and polymer-network formation
+type: software
+version: 2.0.0
+license: PolyForm-Noncommercial-1.0.0
+authors:
+  - family-names: Zhang
+    given-names: Zidan
+    email: zhangzidan@gmail.com
+    affiliation: McKetta Department of Chemical Engineering, The University of Texas at Austin
+preferred-citation:
+  type: article
+  title: Topology and Mechanical Properties of Polymer Networks Formed under Free Radical and Atom Transfer Radical Polymerizations
+  authors:
+    - family-names: Zhang
+      given-names: Zidan
+    - family-names: Krajniak
+      given-names: Jakub
+    - family-names: Dookhith
+      given-names: Aaliyah Z.
+    - family-names: Tian
+      given-names: Yuan
+    - family-names: Sachar
+      given-names: Harnoor S.
+    - family-names: Marioni
+      given-names: Nico
+    - family-names: Duncan
+      given-names: Tyler J.
+    - family-names: Liu
+      given-names: Jun
+    - family-names: Sanoja
+      given-names: Gabriel E.
+    - family-names: Ganesan
+      given-names: Venkat
+  journal: Macromolecules
+  year: 2025
+  volume: 58
+  start: 3168
+  end: 3187
+  doi: 10.1021/acs.macromol.4c03138
+references:
+  - type: article
+    title: "Fracture Behavior of Monodisperse and Polydisperse Polymer Networks: Effects of Topology and Strand-Length Dispersity"
+    authors:
+      - family-names: Zhang
+        given-names: Zidan
+      - family-names: Krajniak
+        given-names: Jakub
+      - family-names: Dookhith
+        given-names: Aaliyah Z.
+      - family-names: Zhang
+        given-names: Han
+      - family-names: Tian
+        given-names: Yuan
+      - family-names: Sachar
+        given-names: Harnoor S.
+      - family-names: Marioni
+        given-names: Nico
+      - family-names: Duncan
+        given-names: Tyler J.
+      - family-names: Liu
+        given-names: Jun
+      - family-names: Sanoja
+        given-names: Gabriel E.
+      - family-names: Ganesan
+        given-names: Venkat
+    journal: Macromolecules
+    year: 2026
+    volume: 59
+    start: 99
+    end: 119
+    doi: 10.1021/acs.macromol.5c01715
+  - type: article
+    title: "Investigation of ABn (n = 2, 4) type hyperbranched polymerization with cyclization and steric factors: influences of monomer concentration, reactivity, and substitution effect"
+    authors:
+      - family-names: Wang
+        given-names: Long
+      - family-names: He
+        given-names: Xuehao
+    journal: "Journal of Polymer Science Part A: Polymer Chemistry"
+    year: 2009
+    volume: 47
+    start: 523
+    end: 533
+    doi: 10.1002/pola.23169
+  - type: article
+    title: "Kinetics of nonideal hyperbranched A2 + B3 polycondensation: simulation and comparison with experiments"
+    authors:
+      - family-names: Yang
+        given-names: Xiaomei
+      - family-names: Wang
+        given-names: Long
+      - family-names: He
+        given-names: Xuehao
+    journal: "Journal of Polymer Science Part A: Polymer Chemistry"
+    year: 2010
+    volume: 48
+    start: 5072
+    end: 5082
+    doi: 10.1002/pola.24305
+  - type: article
+    title: Kinetics of self-condensing vinyl hyperbranched polymerization in three-dimensional space
+    authors:
+      - family-names: He
+        given-names: Xuehao
+      - family-names: Tang
+        given-names: Jing
+    journal: "Journal of Polymer Science Part A: Polymer Chemistry"
+    year: 2008
+    volume: 46
+    start: 4486
+    end: 4494
+    doi: 10.1002/pola.22784
+  - type: article
+    title: Impact of Reversible Deactivation Radical Copolymerizations (RDRPs) on Gelation, Phase Separation, and Mechanical Properties of Polymer Networks
+    authors:
+      - family-names: Dookhith
+        given-names: Aaliyah Z.
+      - family-names: Zhang
+        given-names: Zidan
+      - family-names: Ganesan
+        given-names: Venkat
+      - family-names: Sanoja
+        given-names: Gabriel E.
+    journal: Macromolecules
+    year: 2024
+    volume: 57
+    start: 8698
+    end: 8711
+    doi: 10.1021/acs.macromol.4c00905
+  - type: article
+    title: "Designing soft and tough multiple-network elastomers: impact of reversible radical deactivation on filler network architecture and fracture toughness"
+    authors:
+      - family-names: Dookhith
+        given-names: Aaliyah Z.
+      - family-names: Zhang
+        given-names: Zidan
+      - family-names: Ganesan
+        given-names: Venkat
+      - family-names: Sanoja
+        given-names: Gabriel E.
+    journal: Soft Matter
+    year: 2025
+    volume: 21
+    start: 4029
+    end: 4042
+    doi: 10.1039/D5SM00045A
+  - type: article
+    title: Molecular dynamics simulations of deformation mechanisms of amorphous polyethylene
+    authors:
+      - family-names: Hossain
+        given-names: D.
+      - family-names: Tschopp
+        given-names: M. A.
+      - family-names: Ward
+        given-names: D. K.
+      - family-names: Bouvard
+        given-names: J. L.
+      - family-names: Wang
+        given-names: P.
+      - family-names: Horstemeyer
+        given-names: M. F.
+    journal: Polymer
+    year: 2010
+    volume: 51
+    start: 6071
+    end: 6083
+    doi: 10.1016/j.polymer.2010.10.009
+  - type: conference-paper
+    title: Atomic Scale Deformation Mechanisms of Amorphous Polyethylene under Tensile Loading
+    authors:
+      - family-names: Tschopp
+        given-names: M. A.
+      - family-names: Bouvard
+        given-names: J. L.
+      - family-names: Ward
+        given-names: D. K.
+      - family-names: Horstemeyer
+        given-names: M. F.
+    collection-title: "Supplemental Proceedings: Materials Fabrication, Properties, Characterization, and Modeling (TMS 2011)"
+    publisher:
+      name: Wiley
+    year: 2011
+    start: 789
+    end: 794
+    doi: 10.1002/9781118062142.ch95

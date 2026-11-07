@@ -126,7 +126,8 @@ McKetta Department of Chemical Engineering, The University of Texas at Austin.
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE). Copyright (C) 2023–2026 Zidan Zhang.
+[PolyForm Noncommercial 1.0.0](LICENSE). Copyright (C) 2023–2026 Zidan Zhang (zhangzidan@gmail.com) and Jakub
+Krajniak (jkrajniak@gmail.com).
 
 The code is free for noncommercial use: research, teaching and personal study, and any use by
 universities, public research institutions, government laboratories and other noncommercial

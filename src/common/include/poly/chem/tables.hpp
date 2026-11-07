@@ -24,7 +24,8 @@ namespace poly::chem {
 using StructuralCounts = std::array<std::int64_t, kNumLegacyTypeCodes>;
 
 /// Append-mode tables for one sample. Files are created with a header on first use; the first
-/// column is the time in `time_unit` (MCS in 3dbfm, time steps in dll).
+/// column is the time in `time_unit` (MCS in 3dbfm, time steps in dll, a continuous time in the
+/// statistical model).
 class SampleTables {
  public:
   SampleTables(const std::filesystem::path& dir, int sample, std::span<const std::string> category_labels,
@@ -32,8 +33,13 @@ class SampleTables {
 
   void append(long time, double conversion, const StructuralCounts& structure, const ConnectivityTally& tally,
               std::span<const std::uint64_t> category_counts);
+  void append(double time, double conversion, const StructuralCounts& structure, const ConnectivityTally& tally,
+              std::span<const std::uint64_t> category_counts);
 
  private:
+  void append_rows(std::string_view time, double conversion, const StructuralCounts& structure, const ConnectivityTally& tally,
+                   std::span<const std::uint64_t> category_counts);
+
   std::ofstream structural_;
   std::ofstream propagation_;
   std::ofstream reactype_;

@@ -5,11 +5,16 @@
 
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <ranges>
 #include <stdexcept>
 #include <utility>
 
 namespace poly::chem {
+
+std::string k_px_ini_line(const RateConstants& k) {
+  return k.k_px ? std::format("k_px = {}\n", *k.k_px) : std::string("# k_px not set: an unreacted cross-linker reacts with k_p1\n");
+}
 
 std::string_view to_string(CompetitionRule r) noexcept {
   return r == CompetitionRule::Legacy ? "legacy" : "partition";
@@ -70,14 +75,26 @@ const std::vector<std::string> kTerminationLabels = {
 
 RadicalChainScheme::RadicalChainScheme(std::string name, RateConstants k, Features features, CompetitionRule rule)
     : name_(std::move(name)), k_(k), features_(features), rule_(rule) {
-  if (k_.k_p1 < 0 || k_.k_p2 < 0 || k_.k_term < 0 || k_.k_init < 0) throw std::invalid_argument("rate constants must be non-negative");
-  if (k_.k_p1 > 1 || k_.k_p2 > 1 || k_.k_term > 1 || k_.k_init > 1) throw std::invalid_argument("rate constants are probabilities and must not exceed 1");
-  labels_ = kPropagationLabels;
-  if (features_.termination) labels_.insert(labels_.end(), kTerminationLabels.begin(), kTerminationLabels.end());
+  for (const double rate : {k_.k_init, k_.k_p1, k_.k_p2, k_.k_term, k_.k_px.value_or(0.0)}) {
+    if (rate < 0) throw std::invalid_argument("rate constants must be non-negative");
+    if (rate > 1) throw std::invalid_argument("rate constants are probabilities and must not exceed 1");
+  }
+  labels_ = poly::chem::category_labels(features_.termination);
+}
+
+std::vector<std::string> category_labels(bool termination) {
+  std::vector<std::string> labels = kPropagationLabels;
+  if (termination) labels.insert(labels.end(), kTerminationLabels.begin(), kTerminationLabels.end());
+  return labels;
 }
 
 std::vector<UnitState> RadicalChainScheme::initial_composition(std::size_t n_total, double monovinyl_fraction,
                                                                double radical_fraction) const {
+  return poly::chem::initial_composition(n_total, monovinyl_fraction, radical_fraction, features_.explicit_initiation);
+}
+
+std::vector<UnitState> initial_composition(std::size_t n_total, double monovinyl_fraction, double radical_fraction,
+                                           bool explicit_initiation) {
   if (monovinyl_fraction < 0 || monovinyl_fraction > 1) throw std::invalid_argument("monovinyl_fraction must be in [0,1]");
   if (radical_fraction < 0 || radical_fraction > monovinyl_fraction) {
     throw std::invalid_argument("radical_fraction must be in [0, monovinyl_fraction]");
@@ -85,7 +102,7 @@ std::vector<UnitState> RadicalChainScheme::initial_composition(std::size_t n_tot
   // Legacy truncation semantics: N_mono = int(ntot * monovinyl), N_rad = int(ntot * frac_radical).
   const auto n_mono = static_cast<std::size_t>(static_cast<double>(n_total) * monovinyl_fraction);
   const auto n_init = static_cast<std::size_t>(static_cast<double>(n_total) * radical_fraction);
-  const UnitState initiator = features_.explicit_initiation ? UnitState::dormant_initiator() : UnitState::primary_radical();
+  const UnitState initiator = explicit_initiation ? UnitState::dormant_initiator() : UnitState::primary_radical();
   return std::views::iota(std::size_t{0}, n_total) |
          std::views::transform([&](std::size_t i) {
            if (i < n_init) return initiator;
@@ -179,7 +196,7 @@ std::optional<Reaction> RadicalChainScheme::propose_pair(UnitView ua, UnitView u
   const auto termination = [&] { return Reaction{EventKind::Termination, false, termination_category(ua, ub)}; };
 
   if (can_propagate && !can_terminate) {
-    const double p = vtgt.state.is_unreacted_monomer() ? k_.k_p1 : k_.k_p2;
+    const double p = k_.propagation(vtgt.state);
     if (rng.bernoulli(p)) return propagation();
     return std::nullopt;
   }
@@ -219,16 +236,17 @@ std::optional<Reaction> RadicalChainScheme::propose_unimolecular(UnitView ua, Rn
   return std::nullopt;
 }
 
-std::unique_ptr<ReactionScheme> make_scheme(std::string_view mechanism, RateConstants k, CompetitionRule rule) {
+Mechanism find_mechanism(std::string_view mechanism) {
   std::string lower(mechanism);
   std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-  if (lower == "frp") {
-    return std::make_unique<RadicalChainScheme>("FRP", k, RadicalChainScheme::Features{true, true}, rule);
-  }
-  if (lower == "atrp") {
-    return std::make_unique<RadicalChainScheme>("ATRP", k, RadicalChainScheme::Features{false, false}, rule);
-  }
+  if (lower == "frp") return {"FRP", RadicalChainScheme::Features{true, true}};
+  if (lower == "atrp") return {"ATRP", RadicalChainScheme::Features{false, false}};
   throw std::invalid_argument("unknown reaction mechanism '" + std::string(mechanism) + "' (expected frp or atrp)");
+}
+
+std::unique_ptr<ReactionScheme> make_scheme(std::string_view mechanism, RateConstants k, CompetitionRule rule) {
+  const Mechanism m = find_mechanism(mechanism);
+  return std::make_unique<RadicalChainScheme>(std::string(m.name), k, m.features, rule);
 }
 
 }  // namespace poly::chem

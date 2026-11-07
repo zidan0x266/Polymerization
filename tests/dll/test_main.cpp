@@ -360,6 +360,7 @@ void test_config() {
                        "mechanism=FRP", "k_init=0.01", "radical_fraction=0.02", "extra_snapshots=0.255"});
   CHECK(cfg.mechanism == "frp" && cfg.n_units == 300);
   CHECK(cfg.set("cyclization", "no").has_value() && !cfg.cyclization);
+  CHECK(!cfg.rates.k_px && cfg.set("k_px", "0.05").has_value() && cfg.rates.k_px == 0.05);
   cfg.validate();
   const auto dir = std::filesystem::temp_directory_path() / "dll_test_config";
   std::filesystem::create_directories(dir);

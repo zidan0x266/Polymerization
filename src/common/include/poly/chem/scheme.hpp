@@ -46,9 +46,16 @@ struct Reaction {
 /// Elementary-step probabilities (per sampled neighbor pair, i.e. per Monte Carlo attempt).
 struct RateConstants {
   double k_init{0.0};  ///< initiator decomposition
-  double k_p1{0.0};    ///< propagation onto a vinyl of an unreacted monomer / cross-linker
+  double k_p1{0.0};    ///< propagation onto an unreacted monovinyl monomer (and cross-linker unless k_px is set)
   double k_p2{0.0};    ///< propagation onto a pendant vinyl of a partially reacted cross-linker
   double k_term{0.0};  ///< termination by recombination
+  std::optional<double> k_px{};  ///< propagation onto an unreacted divinyl cross-linker; unset: k_p1
+
+  /// Propagation probability onto the unit `target`, which must carry a vinyl group.
+  [[nodiscard]] double propagation(UnitState target) const noexcept {
+    if (!target.is_unreacted_monomer()) return k_p2;
+    return target.species == Species::Divinyl ? k_px.value_or(k_p1) : k_p1;
+  }
 };
 
 /// How to resolve a pair for which both propagation and termination are possible (one unit
@@ -62,6 +69,9 @@ enum class CompetitionRule {
   /// If k_p2 + k_t > 1 the two are renormalized so that one of them always happens.
   Partition
 };
+
+/// The k_px line of a dumped configuration: a comment while k_px is not set.
+[[nodiscard]] std::string k_px_ini_line(const RateConstants& k);
 
 [[nodiscard]] std::string_view to_string(CompetitionRule r) noexcept;
 [[nodiscard]] std::optional<CompetitionRule> parse_competition_rule(std::string_view s) noexcept;
@@ -138,6 +148,24 @@ class RadicalChainScheme final : public ReactionScheme {
   CompetitionRule rule_;
   std::vector<std::string> labels_;
 };
+
+/// A built-in mechanism: its name and the elementary steps it has.
+struct Mechanism {
+  std::string_view name;  ///< "FRP" or "ATRP"
+  RadicalChainScheme::Features features;
+};
+
+/// The built-in mechanism "frp" or "atrp" (any case); throws std::invalid_argument otherwise.
+[[nodiscard]] Mechanism find_mechanism(std::string_view mechanism);
+
+/// Initial composition for `n_total` units, in legacy order: initiator-derived units first (dormant
+/// initiators if initiation is explicit, primary radicals otherwise), then monovinyl monomers, then
+/// divinyl cross-linkers. N_mono = int(n_total * monovinyl_fraction) includes the initiators.
+[[nodiscard]] std::vector<UnitState> initial_composition(std::size_t n_total, double monovinyl_fraction,
+                                                         double radical_fraction, bool explicit_initiation);
+
+/// Labels of the one-based reaction categories: propagation, then termination if it exists.
+[[nodiscard]] std::vector<std::string> category_labels(bool termination);
 
 /// Factory for the built-in mechanisms: "frp" and "atrp".
 [[nodiscard]] std::unique_ptr<ReactionScheme> make_scheme(std::string_view mechanism, RateConstants k,

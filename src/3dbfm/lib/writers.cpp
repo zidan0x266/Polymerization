@@ -9,6 +9,8 @@
 #include <print>
 #include <stdexcept>
 
+#include "poly/chem/psf.hpp"
+
 namespace bfm {
 
 namespace {
@@ -114,31 +116,11 @@ void write_pdb(const std::filesystem::path& path, const BfmSystem& system) {
 }
 
 void write_psf(const std::filesystem::path& path, const BfmSystem& system) {
-  auto out = open_for_write(path);
-  std::size_t total_bonds = 0;
-  for (const Monomer& m : system.monomers()) total_bonds += m.nbonds;  // each bond listed from both ends (legacy)
-  std::println(out, "{:>8} {:>6}", system.size(), "!NATOM");
-  Index id = 0;
-  for (const Monomer& m : system.monomers()) {
-    const std::string_view res = legacy_residue_name(legacy_type_code(m.state, m.nbonds));
-    std::println(out, "{:>8} {:>4} 1   {:>4}  {:>1}    {:>1}      {:>14.6f}{:>14.6f}{:>12}", id + 1, "MAIN", res, "P", "U", 0.01, 0.01, 0);
-    ++id;
-  }
-  std::println(out, "");
-  std::println(out, "{:>8} {:>13}", total_bonds, "!NBOND: bonds");
-  int on_line = 0;
-  id = 0;
-  for (const Monomer& m : system.monomers()) {
-    for (const Bond b : m.bonds()) {
-      std::print(out, "{:>8}{:>8}", id + 1, b.partner + 1);
-      if (++on_line == 4) {
-        std::println(out, "");
-        on_line = 0;
-      }
-    }
-    ++id;
-  }
-  std::println(out, "END");
+  const auto units = system.monomers();
+  poly::chem::write_psf(
+      path, units.size(),
+      [&](std::size_t i) { return legacy_residue_name(legacy_type_code(units[i].state, units[i].nbonds)); },
+      [&](std::size_t i) { return std::span<const Index>(units[i].partners.data(), units[i].nbonds); });
 }
 
 void write_xyz(const std::filesystem::path& path, const BfmSystem& system) {

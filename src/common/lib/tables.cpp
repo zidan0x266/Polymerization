@@ -34,6 +34,16 @@ SampleTables::SampleTables(const std::filesystem::path& dir, int sample, std::sp
 
 void SampleTables::append(long time, double conversion, const StructuralCounts& structure, const ConnectivityTally& tally,
                           std::span<const std::uint64_t> category_counts) {
+  append_rows(std::format("{}", time), conversion, structure, tally, category_counts);
+}
+
+void SampleTables::append(double time, double conversion, const StructuralCounts& structure, const ConnectivityTally& tally,
+                          std::span<const std::uint64_t> category_counts) {
+  append_rows(std::format("{:.6g}", time), conversion, structure, tally, category_counts);
+}
+
+void SampleTables::append_rows(std::string_view time, double conversion, const StructuralCounts& structure,
+                               const ConnectivityTally& tally, std::span<const std::uint64_t> category_counts) {
   std::print(structural_, "{} {:f}", time, conversion);
   for (auto c : structure) std::print(structural_, " {}", c);
   std::println(structural_, "");

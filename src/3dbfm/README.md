@@ -30,6 +30,7 @@ Keys can be grouped under optional `[system]`, `[scheme]`, `[run]` and `[output]
 | **Scheme** | `mechanism` | `atrp` | `frp` or `atrp` |
 | | `k_init` | `0` | initiation probability |
 | | `k_p1`, `k_p2` | `0.005`, `0.0025` | propagation probability onto a free / pendant vinyl |
+| | `k_px` | not set | propagation probability onto an unreacted cross-linker; if not set, `k_p1` (as in the original code) |
 | | `k_term` | `0` | termination probability |
 | | `competition_rule` | `legacy` | see *Model notes* |
 | | `initiation_requires_neighbor` | `true` | see *Model notes* |

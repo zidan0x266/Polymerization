@@ -398,6 +398,29 @@ void test_scheme_fidelity() {
   for (int t = 0; t < trials; ++t) inits += frp_init->propose_unimolecular(view_for(9), rng).has_value() ? 1 : 0;
   CHECK_NEAR(static_cast<double>(inits) / trials, 0.3, tol);
   CHECK(!frp_init->propose_unimolecular(view_for(0), rng).has_value());
+
+  // k_px: an unreacted cross-linker reacts with k_px when it is set, with k_p1 otherwise;
+  // monomers keep k_p1 and pendant vinyls k_p2.
+  RateConstants kx{0.0, 0.2, 0.3, 0.0};
+  const auto atrp_default = make_scheme("atrp", kx, CompetitionRule::Legacy);
+  kx.k_px = 0.7;
+  const auto atrp_kx = make_scheme("atrp", kx, CompetitionRule::Legacy);
+  const auto rate = [&](const ReactionScheme& scheme, int target) {
+    return static_cast<double>(sample_pair(scheme, 1, target, trials, rng).propagations) / trials;
+  };
+  CHECK_NEAR(rate(*atrp_default, 3), 0.2, tol);
+  CHECK_NEAR(rate(*atrp_kx, 3), 0.7, tol);
+  CHECK_NEAR(rate(*atrp_kx, 0), 0.2, tol);
+  CHECK_NEAR(rate(*atrp_kx, 5), 0.3, tol);
+  CHECK(kx.propagation(UnitState::divinyl_monomer()) == 0.7 && kx.propagation(UnitState::monovinyl_monomer()) == 0.2);
+  kx.k_px = 1.5;
+  bool threw = false;
+  try {
+    (void)make_scheme("atrp", kx, CompetitionRule::Legacy);
+  } catch (const std::invalid_argument&) {
+    threw = true;
+  }
+  CHECK(threw);
   CHECK(!atrp->has_unimolecular_step());
   CHECK(frp->has_unimolecular_step());
 
@@ -501,6 +524,20 @@ void test_config_and_restart() {
     threw = true;
   }
   CHECK(threw);
+  // k_px is optional; the dumped configuration reads back to the same configuration
+  CHECK(!cfg.rates.k_px && cfg.to_ini().contains("# k_px not set"));
+  {
+    std::ofstream f(dir / "b.ini");
+    f << cfg.to_ini();
+  }
+  CHECK(Config::from_file(dir / "b.ini").to_ini() == cfg.to_ini());
+  cfg.apply_overrides({"k_px=0.4"});
+  CHECK(cfg.rates.k_px == 0.4 && cfg.to_ini().contains("k_px = 0.4\n"));
+  {
+    std::ofstream f(dir / "b.ini");
+    f << cfg.to_ini();
+  }
+  CHECK(Config::from_file(dir / "b.ini").rates.k_px == 0.4);
 
   // restart round trip through the legacy format
   const BondVectorSet set;

@@ -42,6 +42,7 @@ std::expected<void, std::string> Config::set(std::string_view raw_key, std::stri
   if (key == "k_init") return assign(rates.k_init, parse_number<double>(key, value));
   if (key == "k_p1") return assign(rates.k_p1, parse_number<double>(key, value));
   if (key == "k_p2") return assign(rates.k_p2, parse_number<double>(key, value));
+  if (key == "k_px") return assign(rates.k_px, parse_number<double>(key, value));
   if (key == "k_term") return assign(rates.k_term, parse_number<double>(key, value));
   if (key == "competition_rule") {
     const auto r = parse_competition_rule(trim(value));
@@ -106,7 +107,7 @@ void Config::validate() const {
   if (snapshot_step <= 0) fail("snapshot_step must be positive");
   if (snapshot_start < 0 || snapshot_start > 1) fail("snapshot_start must be in [0,1]");
   if (log_every_mcs < 1) fail("log_every_mcs must be >= 1");
-  for (double k : {rates.k_init, rates.k_p1, rates.k_p2, rates.k_term}) {
+  for (double k : {rates.k_init, rates.k_p1, rates.k_p2, rates.k_term, rates.k_px.value_or(0.0)}) {
     if (k < 0 || k > 1) fail("rate constants are per-attempt probabilities in [0,1]");
   }
 }
@@ -129,6 +130,7 @@ std::string Config::to_ini() const {
       "mechanism = {}\n"
       "k_init = {}\n"
       "k_p1 = {}\n"
+      "{}"
       "k_p2 = {}\n"
       "k_term = {}\n"
       "competition_rule = {}\n"
@@ -152,7 +154,7 @@ std::string Config::to_ini() const {
       "write_psf = {}\n"
       "write_restart = {}\n",
       lattice_x, lattice_y, lattice_z, n_units, monovinyl_fraction, radical_fraction, mechanism, rates.k_init, rates.k_p1,
-      rates.k_p2, rates.k_term, to_string(competition_rule), yesno(initiation_requires_neighbor), samples, first_sample, seed,
+      poly::chem::k_px_ini_line(rates), rates.k_p2, rates.k_term, to_string(competition_rule), yesno(initiation_requires_neighbor), samples, first_sample, seed,
       mcs_initial_relaxation, mcs_equilibration, max_mcs, stop_conversion, snapshot_start, snapshot_step, extra, log_every_mcs,
       initial_configuration.string(), output_dir.string(), yesno(write_pdb), yesno(write_psf), yesno(write_restart));
 }

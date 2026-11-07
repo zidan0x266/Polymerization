@@ -42,6 +42,7 @@ std::expected<void, std::string> Config::set(std::string_view raw_key, std::stri
   if (key == "k_init") return assign(rates.k_init, parse_number<double>(key, value));
   if (key == "k_p1") return assign(rates.k_p1, parse_number<double>(key, value));
   if (key == "k_p2") return assign(rates.k_p2, parse_number<double>(key, value));
+  if (key == "k_px") return assign(rates.k_px, parse_number<double>(key, value));
   if (key == "k_term") return assign(rates.k_term, parse_number<double>(key, value));
   if (key == "competition_rule") {
     const auto r = poly::chem::parse_competition_rule(trim(value));
@@ -107,7 +108,7 @@ void Config::validate() const {
   if (initial_configuration.empty() && n_units > 0 && static_cast<std::size_t>(static_cast<double>(n_units) * radical_fraction) == 0) {
     fail("radical_fraction yields zero initiators");
   }
-  for (double k : {rates.k_init, rates.k_p1, rates.k_p2, rates.k_term}) {
+  for (double k : {rates.k_init, rates.k_p1, rates.k_p2, rates.k_term, rates.k_px.value_or(0.0)}) {
     if (k < 0 || k > 1) fail("rate constants are probabilities in [0,1]");
   }
   if (samples < 1) fail("samples must be >= 1");
@@ -142,6 +143,7 @@ std::string Config::to_ini() const {
       "mechanism = {}\n"
       "k_init = {}\n"
       "k_p1 = {}\n"
+      "{}"
       "k_p2 = {}\n"
       "k_term = {}\n"
       "competition_rule = {}\n"
@@ -167,7 +169,7 @@ std::string Config::to_ini() const {
       "dump_every = {}\n"
       "dump_solvent = {}\n",
       cells, n_units, monovinyl_fraction, radical_fraction, chain_length, n_chains, to_string(initial), yesno(allow_crossing), mechanism, rates.k_init,
-      rates.k_p1, rates.k_p2, rates.k_term, poly::chem::to_string(competition_rule), to_string(reaction_partner), yesno(cyclization), samples,
+      rates.k_p1, poly::chem::k_px_ini_line(rates), rates.k_p2, rates.k_term, poly::chem::to_string(competition_rule), to_string(reaction_partner), yesno(cyclization), samples,
       first_sample, seed, equilibration_steps, steps, stop_conversion, snapshot_start, snapshot_step, extra, log_every,
       initial_configuration.string(), output_dir.string(), yesno(write_pdb), yesno(write_psf), yesno(write_restart), dump_every,
       yesno(dump_solvent));

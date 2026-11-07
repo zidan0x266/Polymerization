@@ -9,9 +9,9 @@ descriptions; no original code was available. The chemistry, free radical (FRP) 
 transfer radical (ATRP) polymerization of monomers and divinyl cross-linkers, is shared with the
 3dbfm module.
 
-**Status — on-going.** Phase 1, the motion of chains and solvent, and phase 2, the reactions, are
-done, and the module reproduces the published DLL gel points of ref. 4 (see the checks under
-[Model](#model)). Faster, parallel time steps are planned.
+**Status — available.** The motion of chains and solvent and the reactions are complete, and the
+module reproduces the published DLL gel points of ref. 4 (see the checks under [Model](#model)).
+Faster, parallel time steps are planned.
 
 ## Run
 
@@ -43,7 +43,8 @@ composition, chemistry and snapshot keys mean the same as in the
 | | `allow_crossing` | `false` | let chains pass through each other, for comparison only (see [Model](#model)) |
 | **Scheme** | `mechanism` | `atrp` | `frp` or `atrp` |
 | | `k_init` | `0` | initiator decomposition per time step (FRP) |
-| | `k_p1`, `k_p2` | `0.005`, `0.0025` | propagation onto a monomer or cross-linker vinyl, onto a pendant vinyl |
+| | `k_p1`, `k_p2` | `0.005`, `0.0025` | propagation onto an unreacted monomer, onto a pendant vinyl |
+| | `k_px` | not set | propagation onto an unreacted cross-linker; if not set, `k_p1` |
 | | `k_term` | `0` | termination by recombination (FRP) |
 | | `competition_rule` | `legacy` | propagation against termination for one pair, as in 3dbfm |
 | | `reaction_partner` | `random_neighbor` | which neighbors are tried in a time step: `random_neighbor` or `all_neighbors` (see [Model](#model)) |
@@ -123,8 +124,11 @@ hardly changes the mobility, but over long runs it keeps the chain topology.
 
 In the reaction stage, units on neighboring sites react with the probabilities given by the rate
 constants, by the rules of the 3dbfm module: a radical adds across the vinyl group of a monomer
-(`k_p1`) or a pendant vinyl (`k_p2`), two radicals recombine (`k_term`, FRP), and a dormant
-initiator decomposes (`k_init` per step, FRP). A new bond always joins neighbors, and the motion
+(`k_p1`), an unreacted cross-linker (`k_px`) or a pendant vinyl (`k_p2`), two radicals recombine
+(`k_term`, FRP), and a dormant initiator decomposes (`k_init` per step, FRP). The constants are
+probabilities per pair of units, so a cross-linker with two vinyl groups reacts twice as often
+as a monomer of the same reactivity per vinyl group: equal reactivity per vinyl group, the
+convention of refs. 4 and 6, is `k_px = 2 k_p1` with `k_p2 = k_p1`. A new bond always joins neighbors, and the motion
 keeps it intact, so branched molecules and networks move without further rules. A radical reacts
 with whatever vinyl groups come into contact, including pendant vinyls of its own molecule, so
 cyclization and intramolecular cross-linking arise from the chain conformations and the
@@ -191,7 +195,7 @@ Checks of the reactions:
   gelation, the effect that brought the DLL gel points of ref. 2 close to experiment.
 - The DLL gel points of ref. 4 (Table 2), ATRP homopolymerization of a divinyl monomer on a
   fully occupied lattice without solvent, are reproduced with equal reactivity per vinyl group
-  [6], i.e. `k_p2 = k_p1/2` (`divinyl_2018.ini`, 131,072 sites). Vinyl conversion at the gel
+  [6], i.e. `k_px = 2 k_p2` (`divinyl_2018.ini`, 131,072 sites). Vinyl conversion at the gel
   point, cross-linker conversion in parentheses:
 
   | [X]₀/[I]₀ | with cyclization | ref. 4 | without cyclization | ref. 4 |

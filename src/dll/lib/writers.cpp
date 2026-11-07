@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "poly/chem/psf.hpp"
+
 namespace dll {
 
 namespace {
@@ -82,28 +84,9 @@ void write_pdb(const std::filesystem::path& path, const DllSystem& system) {
 }
 
 void write_psf(const std::filesystem::path& path, const DllSystem& system) {
-  auto out = open_for_write(path);
-  const auto n = static_cast<Bead>(system.solute_beads());
-  std::size_t total_bonds = 0;
-  for (Bead b = 0; b < n; ++b) total_bonds += system.bonds(b).size();  // each bond listed from both ends (legacy)
-  std::println(out, "{:>8} {:>6}", n, "!NATOM");
-  for (Bead b = 0; b < n; ++b) {
-    std::println(out, "{:>8} {:>4} 1   {:>4}  {:>1}    {:>1}      {:>14.6f}{:>14.6f}{:>12}", b + 1, "MAIN", residue(system, b), "P",
-                 "U", 0.01, 0.01, 0);
-  }
-  std::println(out, "");
-  std::println(out, "{:>8} {:>13}", total_bonds, "!NBOND: bonds");
-  int on_line = 0;
-  for (Bead b = 0; b < n; ++b) {
-    for (const Bead p : system.bonds(b)) {
-      std::print(out, "{:>8}{:>8}", b + 1, p + 1);
-      if (++on_line == 4) {
-        std::println(out, "");
-        on_line = 0;
-      }
-    }
-  }
-  std::println(out, "END");
+  poly::chem::write_psf(
+      path, system.solute_beads(), [&](std::size_t b) { return residue(system, static_cast<Bead>(b)); },
+      [&](std::size_t b) { return system.bonds(static_cast<Bead>(b)); });
 }
 
 void write_configuration(const std::filesystem::path& path, const DllSystem& system) {

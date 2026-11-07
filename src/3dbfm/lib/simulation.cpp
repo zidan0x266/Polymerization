@@ -35,8 +35,9 @@ void Simulation::run() {
   }
   log_line(std::format("3DBFM reactive Monte Carlo, mechanism {}, seed {}", scheme_->name(), config_.seed));
   const auto& k = scheme_->rate_constants();
-  log_line(std::format("rate constants: k_init={} k_p1={} k_p2={} k_term={}, competition rule {}", k.k_init, k.k_p1, k.k_p2,
-                       k.k_term, to_string(config_.competition_rule)));
+  log_line(std::format("rate constants: k_init={} k_p1={} k_px={} k_p2={} k_term={}, competition rule {}", k.k_init, k.k_p1,
+                       k.k_px ? std::format("{}", *k.k_px) : std::string("k_p1"), k.k_p2, k.k_term,
+                       to_string(config_.competition_rule)));
   for (int s = 0; s < config_.samples; ++s) run_sample(config_.first_sample + s);
   log_line("all samples finished");
 }

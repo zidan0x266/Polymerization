@@ -8,13 +8,14 @@ run_job.sh executes in the run root.
     cases.py md [options] > jobs_md.txt              LAMMPS runs (MPI)
 
 Options: --size paper|reduced|mini|smoke, --samples N, --mechanisms atrp frp, --x 4 8 12 16 20
-(percent cross-linker), --init (initiator fraction), --k-init (FRP initiation), --stop 0.96,
+(percent cross-linker), --init (initiator fraction), --k-init (FRP initiation), --stop,
 --models bfm stat (lattice only), --rates fast|paper (md only: ATRP with ten times the rate constants
 of the paper, the default, or with those of the paper, in md_paper/).
 
 The paper and reduced sizes have the composition and rate constants of the paper (0.2 % initiator,
-k_init = 1e-5). A mini system holds too few chains at 0.2 % initiator, so mini and smoke default to
-2 % initiator and k_init = 1e-4 (k_init / k_p1 = 2e-4).
+k_init = 1e-5) and run up to conversion 0.96. A mini system holds too few chains at 0.2 % initiator,
+so mini and smoke default to 2 % initiator and k_init = 1e-4 (k_init / k_p1 = 2e-4), and stop at
+conversion 0.8: the gel points lie below, and the last vinyls take most of the time.
 """
 import argparse
 
@@ -47,13 +48,14 @@ def main():
     p.add_argument("--x", type=int, nargs="+", default=[4, 8, 12, 16, 20])
     p.add_argument("--init", type=float, help="initiator fraction (default 0.002, mini and smoke 0.02)")
     p.add_argument("--k-init", type=float, help="FRP initiation (default 1e-5, mini and smoke 1e-4)")
-    p.add_argument("--stop", type=float, default=0.96)
+    p.add_argument("--stop", type=float, help="conversion at which runs end (default 0.96, mini and smoke 0.8)")
     p.add_argument("--models", nargs="+", default=["bfm", "stat"], help="lattice only")
     p.add_argument("--rates", choices=("fast", "paper"), default="fast", help="md only")
     a = p.parse_args()
     edge, n_bfm, n_stat, cells = SIZES[a.size]
     init = a.init if a.init is not None else (0.02 if a.size in SMALL else 0.002)
     k_init = a.k_init if a.k_init is not None else (1e-4 if a.size in SMALL else 1e-5)
+    a.stop = a.stop if a.stop is not None else (0.8 if a.size in SMALL else 0.96)
     for m in a.mechanisms:
         for x in a.x:
             for s in range(1, a.samples + 1):

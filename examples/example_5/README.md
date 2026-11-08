@@ -53,8 +53,8 @@ The comparison runs in two stages:
 
 | Stage | Size | Composition | Where |
 |:--|:--|:--|:--|
-| building up (`--size mini`) | about 4,000 units: 3dbfm 34³ lattice with 4,176 units, statistical 4,176 units, LAMMPS 4,000 beads | 2 % initiator, FRP `k_init` = 10⁻⁴, 15 samples | a workstation, in minutes |
-| validation (`--size paper`) | the paper: 3dbfm 100³ lattice with 106,250 units, statistical 106,250 units, LAMMPS 108,000 beads | 0.2 % initiator, FRP `k_init` = 10⁻⁵, 5 samples, as in the paper | a cluster |
+| building up (`--size mini`) | about 4,000 units: 3dbfm 34³ lattice with 4,176 units, statistical 4,176 units, LAMMPS 4,000 beads | 2 % initiator, FRP `k_init` = 10⁻⁴; 5 samples, up to conversion 0.8 | a workstation, in minutes |
+| validation (`--size paper`) | the paper: 3dbfm 100³ lattice with 106,250 units, statistical 106,250 units, LAMMPS 108,000 beads | 0.2 % initiator, FRP `k_init` = 10⁻⁵; 5 samples, up to conversion 0.96, as in the paper | a cluster |
 
 What a small box must hold is many chains, not many units: at the 0.2 % initiator of the paper,
 4,000 units hold eight chains of some 500 units, too few for a gel point. The mini systems
@@ -71,16 +71,18 @@ From an empty run directory, with the toolkit built in `build/` and the plugin i
 
 ```bash
 E=/path/to/Polymerization/examples/example_5
-python3 $E/cases.py lattice --size mini --samples 15 --x 4 12 20 > jobs_lattice.txt
-python3 $E/cases.py md --size mini --samples 15 --x 4 12 20 > jobs_md.txt
-seq $(wc -l < jobs_lattice.txt) | xargs -P 8 -I{} $E/run_job.sh jobs_lattice.txt {}
-seq $(wc -l < jobs_md.txt) | LMP=/path/to/lmp MPIRUN= xargs -P 8 -I{} $E/run_job.sh jobs_md.txt {}
+python3 $E/cases.py lattice --size mini --x 4 12 20 > jobs_lattice.txt
+python3 $E/cases.py md --size mini --x 4 12 20 > jobs_md.txt
+seq $(wc -l < jobs_lattice.txt) | xargs -P 4 -I{} $E/run_job.sh jobs_lattice.txt {}
+seq $(wc -l < jobs_md.txt) | LMP=/path/to/lmp MPIRUN= xargs -P 4 -I{} $E/run_job.sh jobs_md.txt {}
 python3 $E/analyze.py compare . > comparison.md
 ```
 
-`MPIRUN=` (empty) runs each LAMMPS sample as one process; eight run side by side. On eight cores
-of an Apple M4 the 180 lattice runs take a few minutes and the 90 LAMMPS runs (about 50 s for ATRP
-and 100 s for FRP each, up to conversion 0.96) about a quarter of an hour.
+`MPIRUN=` (empty) runs each LAMMPS sample as one process, and `xargs -P 4` runs four side by side,
+one per performance core of an Apple M4 Mac mini, which leaves the machine usable. A LAMMPS run
+takes about 30 s (ATRP) or 50 s (FRP) up to conversion 0.8, a lattice run a few seconds, so the 30
+LAMMPS and 60 lattice runs take a few minutes. Running on to conversion 0.96 more than doubles the
+LAMMPS time (`--stop 0.96`); more samples (`--samples 15`) narrow the error bars.
 
 ### Runs on a cluster
 

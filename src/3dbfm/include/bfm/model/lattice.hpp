@@ -19,7 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include "bfm/core/types.hpp"
+#include "bfm/model/types.hpp"
 
 namespace bfm {
 
@@ -99,12 +99,6 @@ class PeriodicLattice {
       for (std::size_t s : f) set_bit(s);
     }
     anchors_[site_index(a)] = id;
-  }
-  void vacate_cube(Vec3i a) noexcept {
-    for (const Face& f : {x_face(a.x, a), x_face(next(0, a.x), a)}) {
-      for (std::size_t s : f) clear_bit(s);
-    }
-    anchors_[site_index(a)] = kNone;
   }
   void clear() noexcept {
     std::ranges::fill(occupied_, std::uint64_t{0});

@@ -67,19 +67,12 @@ std::expected<void, std::string> Config::set(std::string_view raw_key, std::stri
   if (key == "snapshot_step") return assign(snapshot_step, parse_number<double>(key, value));
   if (key == "extra_snapshots") return assign(extra_snapshots, parse_double_list(key, value));
   if (key == "log_every") return assign(log_every, parse_number<long>(key, value));
-  if (key == "initial_configuration") {
-    initial_configuration = trim(value);
-    return {};
-  }
   if (key == "directory" || key == "output_dir") {
     output_dir = trim(value);
     return {};
   }
   if (key == "write_pdb") return assign(write_pdb, parse_bool(key, value));
   if (key == "write_psf") return assign(write_psf, parse_bool(key, value));
-  if (key == "write_restart") return assign(write_restart, parse_bool(key, value));
-  if (key == "dump_every") return assign(dump_every, parse_number<long>(key, value));
-  if (key == "dump_solvent") return assign(dump_solvent, parse_bool(key, value));
   return std::unexpected(std::format("unknown configuration key '{}'", raw_key));
 }
 
@@ -100,12 +93,12 @@ void Config::validate() const {
   }
   if (n_chains > 0 && chain_length < 2) fail("chain_length must be at least 2");
   const std::size_t sites = 4 * static_cast<std::size_t>(cells) * static_cast<std::size_t>(cells) * static_cast<std::size_t>(cells);
-  if (initial_configuration.empty() && n_units + n_chains * chain_length > sites) {
+  if (n_units + n_chains * chain_length > sites) {
     fail(std::format("n_units and the chain beads exceed the {} sites of {} cells", sites, cells));
   }
   if (monovinyl_fraction < 0 || monovinyl_fraction > 1) fail("monovinyl_fraction must be in [0,1]");
   if (radical_fraction < 0 || radical_fraction > monovinyl_fraction) fail("radical_fraction must be in [0, monovinyl_fraction]");
-  if (initial_configuration.empty() && n_units > 0 && static_cast<std::size_t>(static_cast<double>(n_units) * radical_fraction) == 0) {
+  if (n_units > 0 && static_cast<std::size_t>(static_cast<double>(n_units) * radical_fraction) == 0) {
     fail("radical_fraction yields zero initiators");
   }
   for (double k : {rates.k_init, rates.k_p1, rates.k_p2, rates.k_term, rates.k_px.value_or(0.0)}) {
@@ -118,7 +111,6 @@ void Config::validate() const {
   if (snapshot_step <= 0) fail("snapshot_step must be positive");
   if (snapshot_start < 0 || snapshot_start > 1) fail("snapshot_start must be in [0,1]");
   if (log_every < 1) fail("log_every must be at least 1");
-  if (dump_every < 0) fail("dump_every must not be negative");
 }
 
 std::vector<double> Config::snapshot_levels() const {
@@ -159,20 +151,15 @@ std::string Config::to_ini() const {
       "snapshot_start = {}\n"
       "snapshot_step = {}\n"
       "extra_snapshots = {}\n"
-      "log_every = {}\n"
-      "initial_configuration = {}\n\n"
+      "log_every = {}\n\n"
       "[output]\n"
       "directory = {}\n"
       "write_pdb = {}\n"
-      "write_psf = {}\n"
-      "write_restart = {}\n"
-      "dump_every = {}\n"
-      "dump_solvent = {}\n",
+      "write_psf = {}\n",
       cells, n_units, monovinyl_fraction, radical_fraction, chain_length, n_chains, to_string(initial), yesno(allow_crossing), mechanism, rates.k_init,
       rates.k_p1, poly::chem::k_px_ini_line(rates), rates.k_p2, rates.k_term, poly::chem::to_string(competition_rule), to_string(reaction_partner), yesno(cyclization), samples,
       first_sample, seed, equilibration_steps, steps, stop_conversion, snapshot_start, snapshot_step, extra, log_every,
-      initial_configuration.string(), output_dir.string(), yesno(write_pdb), yesno(write_psf), yesno(write_restart), dump_every,
-      yesno(dump_solvent));
+      output_dir.string(), yesno(write_pdb), yesno(write_psf));
 }
 
 }  // namespace dll

@@ -19,7 +19,6 @@ void BfmSystem::place_randomly(std::span<const UnitState> composition, Rng& rng)
   }
   lattice_.clear();
   monomers_.assign(static_cast<std::size_t>(n), Monomer{});
-  images_.assign(static_cast<std::size_t>(n), Vec3i{});
   parent_.resize(static_cast<std::size_t>(n));
   std::iota(parent_.begin(), parent_.end(), Index{0});
   tally_ = {};
@@ -41,14 +40,10 @@ void BfmSystem::place_randomly(std::span<const UnitState> composition, Rng& rng)
   }
 }
 
-void BfmSystem::load(std::vector<Monomer> monomers, std::span<const Vec3i> unwrapped) {
+void BfmSystem::load(std::vector<Monomer> monomers) {
   lattice_.clear();
   monomers_ = std::move(monomers);
   const auto n = size();
-  if (!unwrapped.empty() && unwrapped.size() != monomers_.size()) {
-    throw std::invalid_argument("restart configuration: unwrapped coordinates do not match the number of units");
-  }
-  images_.assign(static_cast<std::size_t>(n), Vec3i{});
   parent_.resize(static_cast<std::size_t>(n));
   std::iota(parent_.begin(), parent_.end(), Index{0});
   tally_ = {};
@@ -56,20 +51,12 @@ void BfmSystem::load(std::vector<Monomer> monomers, std::span<const Vec3i> unwra
     const auto& m = monomers_[static_cast<std::size_t>(id)];
     const Vec3i a = m.anchor();
     if (a.x < 0 || a.y < 0 || a.z < 0 || a.x >= lattice_.lx() || a.y >= lattice_.ly() || a.z >= lattice_.lz()) {
-      throw std::runtime_error("restart configuration has a unit outside the box (unit " + std::to_string(id) + ")");
+      throw std::runtime_error("configuration has a unit outside the box (unit " + std::to_string(id) + ")");
     }
     if (!lattice_.cube_is_free(a)) {
-      throw std::runtime_error("restart configuration has overlapping units (unit " + std::to_string(id) + ")");
+      throw std::runtime_error("configuration has overlapping units (unit " + std::to_string(id) + ")");
     }
     lattice_.occupy_cube(a, id);
-    if (!unwrapped.empty()) {
-      // The unwrapped anchor differs from the wrapped one by whole box lengths.
-      const Vec3i d = unwrapped[static_cast<std::size_t>(id)] - a;
-      if (d.x % lattice_.lx() != 0 || d.y % lattice_.ly() != 0 || d.z % lattice_.lz() != 0) {
-        throw std::runtime_error("restart configuration: unwrapped and wrapped anchors disagree (unit " + std::to_string(id) + ")");
-      }
-      images_[static_cast<std::size_t>(id)] = {d.x / lattice_.lx(), d.y / lattice_.ly(), d.z / lattice_.lz()};
-    }
   }
   for (Index id = 0; id < n; ++id) {
     for (const Bond b : monomers_[static_cast<std::size_t>(id)].bonds()) unite(id, b.partner);
@@ -93,10 +80,7 @@ bool BfmSystem::attempt_move(Index id, Direction d) noexcept {
     p.vectors[p.slot_of(id)] = BondVectorSet::reverse(shifted[i]);
     m.vectors[i] = shifted[i];
   }
-  const Vec3i to = lattice_.shift_cube(from, d, id);
-  m.set_anchor(to);
-  const Vec3i step = unit_step(d);
-  if (to - from != step) images_[static_cast<std::size_t>(id)] += step;  // crossed the periodic boundary
+  m.set_anchor(lattice_.shift_cube(from, d, id));
   return true;
 }
 

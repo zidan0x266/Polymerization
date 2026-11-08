@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "poly/random.hpp"
-#include "rw/lattice/fcc.hpp"
+#include "rw/model/fcc.hpp"
 #include "rw/model/packing.hpp"
 
 namespace rw {

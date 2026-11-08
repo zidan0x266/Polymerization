@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "rw/walk/packer.hpp"
+#include "rw/sim/packer.hpp"
 
 #include <algorithm>
 #include <array>

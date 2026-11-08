@@ -86,20 +86,14 @@ class SampleRun {
     equilibrate();
     react();
     if (auto ok = system_.validate(); !ok) throw std::logic_error("final configuration check failed: " + ok.error());
-    if (config_.write_restart) write_configuration(config_.output_dir / std::format("final_{}.dat", sample_), system_);
     return std::move(system_);
   }
 
  private:
   DllSystem prepare() {
-    if (!config_.initial_configuration.empty()) {
-      say_(std::format("sample {}: loading configuration {}", sample_, config_.initial_configuration.string()));
-      return read_configuration(config_.initial_configuration);
-    }
     const auto chains = initial_chains(config_.initial, config_.cells, config_.chain_length, config_.n_chains, rng_);
     const auto units = scheme_.initial_composition(config_.n_units, config_.monovinyl_fraction, config_.radical_fraction);
     const auto points = random_free_points(config_.cells, chains, units.size(), rng_);
-    loaded_ = false;
     return DllSystem(config_.cells, config_.chain_length, chains, points, units);
   }
 
@@ -131,9 +125,6 @@ class SampleRun {
         }
       }
     }
-    if (config_.write_restart && !loaded_) {
-      write_configuration(config_.output_dir / std::format("equilibrated_{}.dat", sample_), system_);
-    }
   }
 
   void react() {
@@ -148,13 +139,6 @@ class SampleRun {
                        progress_.conversion(), reactor.reactive_count()));
     }
 
-    std::ofstream trajectory;
-    if (config_.dump_every > 0) {
-      trajectory.open(config_.output_dir / std::format("trajectory_{}.lammpstrj", sample_), std::ios::binary);
-      if (!trajectory) throw std::runtime_error("cannot write the trajectory file");
-      write_dump_frame(trajectory, system_, 0, config_.dump_solvent);
-    }
-
     report_.restart(say_.elapsed());
     long step = 0;
     std::string ending;
@@ -167,7 +151,6 @@ class SampleRun {
       ++step;
       report_.add(motion_.step(system_, rng_));
       reactor.step(system_, rng_, progress_);
-      if (config_.dump_every > 0 && step % config_.dump_every == 0) write_dump_frame(trajectory, system_, step, config_.dump_solvent);
       while (next_level < levels.size() && progress_.conversion() >= levels[next_level] - 1e-12) {
         snapshot(step, levels[next_level]);
         ++next_level;
@@ -212,7 +195,6 @@ class SampleRun {
   poly::Rng& rng_;
   const Logger& say_;
   int sample_;
-  bool loaded_{true};
   DllSystem system_;
   Motion motion_{system_, config_.allow_crossing};
   poly::chem::ReactionProgress progress_{};

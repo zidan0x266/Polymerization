@@ -1,16 +1,55 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "bfm/sim/simulation.hpp"
+#include "bfm/sim/run.hpp"
 
+#include <chrono>
 #include <format>
 #include <fstream>
+#include <memory>
 #include <ostream>  // std::print / std::println overloads for std::ostream
 #include <print>
 
 #include "bfm/io/writers.hpp"
+#include "bfm/model/bond_set.hpp"
+#include "bfm/sim/reaction.hpp"
 
 namespace bfm {
+
+namespace {
+
+class Simulation {
+ public:
+  Simulation(Config config, std::unique_ptr<ReactionScheme> scheme, std::ostream& log);
+
+  /// Run all samples configured in `config`.
+  void run();
+
+  /// Run one sample (numbered as in the output files).
+  void run_sample(int sample);
+
+
+ private:
+  void prepare_system(int sample);
+  void relax(long n_mcs, const char* label);
+  void react(int sample);
+  bool attempt_reaction(Index center, int slot);
+  void apply(const Reaction& reaction, Index center, Index partner, int slot);
+  void rebuild_reactive_set();
+  void update_reactive(Index id);
+  void snapshot(int sample, long mcs, double level);
+  void log_line(const std::string& message) const;
+
+  Config config_;
+  std::unique_ptr<ReactionScheme> scheme_;
+  std::ostream& log_;
+  BondVectorSet bonds_;
+  std::unique_ptr<BfmSystem> system_;
+  std::unique_ptr<Rng> rng_;
+  ReactionProgress progress_{};
+  IndexSet reactive_;  ///< units for which scheme_->is_reactive() holds
+  std::chrono::steady_clock::time_point started_;
+};
 
 Simulation::Simulation(Config config, std::unique_ptr<ReactionScheme> scheme, std::ostream& log)
     : config_(std::move(config)), scheme_(std::move(scheme)), log_(log) {
@@ -52,13 +91,6 @@ void Simulation::prepare_system(int sample) {
     if (s.species == Species::Initiator) ++n_init;
   }
 
-  if (!config_.initial_configuration.empty()) {
-    log_line(std::format("sample {}: loading configuration {}", sample, config_.initial_configuration.string()));
-    auto restart = read_legacy_configuration(config_.initial_configuration, system_->lattice().dimensions(), config_.n_units);
-    system_->load(std::move(restart.units), restart.unwrapped);
-    for (const Monomer& m : system_->monomers()) progress_.count_unit(m.state);
-    return;
-  }
   for (const UnitState& s : composition) progress_.count_unit(s);
 
   system_->place_randomly(composition, *rng_);
@@ -69,9 +101,6 @@ void Simulation::prepare_system(int sample) {
                        config_.lattice_y, config_.lattice_z, progress_.total_vinyls));
   relax(config_.mcs_initial_relaxation, "initial relaxation");
   relax(config_.mcs_equilibration, "equilibration");
-  if (config_.write_restart) {
-    write_legacy_configuration(config_.output_dir / std::format("equilibrated_{}.dat", sample), *system_);
-  }
 }
 
 void Simulation::relax(long n_mcs, const char* label) {
@@ -83,20 +112,6 @@ void Simulation::relax(long n_mcs, const char* label) {
     }
   }
   log_line(std::format("{}: {} MCS of athermal moves done", label, n_mcs));
-}
-
-std::optional<ReactionAttempt> map_reaction_draw(const BfmSystem& system, const IndexSet& reactive, std::uint32_t x,
-                                                 int slot) noexcept {
-  const auto n = static_cast<std::uint32_t>(system.size());
-  const auto na = static_cast<std::uint32_t>(reactive.size());
-  if (2 * static_cast<std::uint64_t>(na) > n) return ReactionAttempt{static_cast<Index>(x), slot};
-  if (x < na) return ReactionAttempt{reactive[x], slot};
-  if (x < 2 * na) {
-    const Index center = system.partner_at(reactive[x - na], slot);
-    if (center == kNone || reactive.contains(center)) return std::nullopt;
-    return ReactionAttempt{center, BondVectorSet::opposite_offset(slot)};
-  }
-  return std::nullopt;
 }
 
 void Simulation::rebuild_reactive_set() {
@@ -213,9 +228,6 @@ void Simulation::react(int sample) {
   } else if (!done) {
     log_line(std::format("sample {}: max_mcs reached before stop_conversion", sample));
   }
-  if (config_.write_restart) {
-    write_legacy_configuration(config_.output_dir / std::format("final_{}.dat", sample), *system_);
-  }
   log_line(std::format("sample {}: finished after {} MCS at conversion {:.6f}", sample, mcs, progress_.conversion()));
 }
 
@@ -223,6 +235,14 @@ void Simulation::run_sample(int sample) {
   std::filesystem::create_directories(config_.output_dir);
   prepare_system(sample);
   react(sample);
+}
+
+}  // namespace
+
+void run(Config config, std::ostream& log) {
+  config.validate();
+  auto scheme = make_scheme(config.mechanism, config.rates, config.competition_rule);
+  Simulation(std::move(config), std::move(scheme), log).run();
 }
 
 }  // namespace bfm

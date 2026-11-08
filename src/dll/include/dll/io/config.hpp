@@ -49,15 +49,11 @@ struct Config {
   double snapshot_step{0.01};
   std::vector<double> extra_snapshots{};
   long log_every{1000};
-  std::filesystem::path initial_configuration{};  ///< configuration file to start from
 
   // [output]
   std::filesystem::path output_dir{"."};
   bool write_pdb{true};
   bool write_psf{true};
-  bool write_restart{true};
-  long dump_every{0};  ///< write a trajectory frame every this many steps; 0 = none
-  bool dump_solvent{false};
 
   /// Load from an INI file; unknown keys are an error so typos cannot silently change runs.
   static Config from_file(const std::filesystem::path& path);

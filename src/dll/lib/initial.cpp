@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "rw/walk/packer.hpp"
+#include "rw/sim/packer.hpp"
 
 namespace dll {
 

@@ -16,8 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "bfm/io/config.hpp"
-#include "bfm/sim/simulation.hpp"
+#include "bfm/sim/run.hpp"
 
 namespace {
 
@@ -52,10 +51,7 @@ int main(int argc, char** argv) {
       }
     }
     cfg.apply_overrides(overrides);
-    cfg.validate();
-    auto scheme = bfm::make_scheme(cfg.mechanism, cfg.rates, cfg.competition_rule);
-    bfm::Simulation sim(std::move(cfg), std::move(scheme), std::cout);
-    sim.run();
+    bfm::run(std::move(cfg), std::cout);
     return 0;
   } catch (const std::exception& e) {
     std::println(std::cerr, "bfm_react: {}", e.what());

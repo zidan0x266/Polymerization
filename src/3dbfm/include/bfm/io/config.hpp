@@ -13,7 +13,7 @@
 #include <string_view>
 #include <vector>
 
-#include "bfm/reaction/scheme.hpp"
+#include "bfm/sim/reaction.hpp"
 
 namespace bfm {
 
@@ -46,13 +46,11 @@ struct Config {
   double snapshot_step{0.01};
   std::vector<double> extra_snapshots{};  ///< additional conversion levels (e.g. 0.969)
   long log_every_mcs{1000};
-  std::filesystem::path initial_configuration{};  ///< legacy-format restart file; skips placement
 
   // [output]
   std::filesystem::path output_dir{"."};
   bool write_pdb{true};
   bool write_psf{true};
-  bool write_restart{true};
 
   /// Load from an INI file; unknown keys are an error so typos cannot silently change runs.
   static Config from_file(const std::filesystem::path& path);

@@ -52,7 +52,7 @@ Keys can be grouped under optional `[system]`, `[walk]`, `[run]` and `[output]` 
 - `config.xyz`: extended XYZ file with the atom type and the wrapped position of every atom.
 - `run_config.ini`: the configuration of the run.
 
-## Model notes
+## Model
 
 Sites of the FCC lattice are one bond length apart, so every bond has length b and no two beads
 are closer than b. The box edge is √2·b times the number of cells. Each chain starts on a random
@@ -102,13 +102,11 @@ beads. This code handles these cases and boxes of up to 1000 cells per edge.
 
 ```
 include/rw/
-  lattice/   FCC lattice and bond angles
-  model/     the packed system and its consistency check
-  walk/      chain growth and cross-linker placement
-  io/        configuration and output files
-  run.hpp    driver
-lib/         implementation
-apps/        rw_pack
+  model/   the FCC lattice with its bond angles, and the packed system with its consistency check
+  sim/     chain growth and cross-linker placement, and the driver
+  io/      configuration and output files
+lib/       implementation
+apps/      rw_pack
 ```
 
 Unit tests are in [`tests/randomwalk`](../../tests/randomwalk). The random number generator and

@@ -14,8 +14,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "poly/chem/psf.hpp"
 #include "poly/chem/tables.hpp"
+#include "statistical/io/writers.hpp"
 #include "statistical/sim/kinetics.hpp"
 
 namespace statistical {
@@ -66,10 +66,7 @@ Network run_sample(const Config& config, const poly::chem::Mechanism& mechanism,
     tables.append(kinetics.time(), progress.conversion(), network.structural_counts(), network.connectivity(),
                   std::span<const std::uint64_t>(progress.category_counts).subspan(1));
     if (config.write_psf) {
-      poly::chem::write_psf(
-          config.output_dir / std::format("config_{}_{}.psf", sample, poly::chem::legacy_conversion_tag(level)), network.size(),
-          [&](std::size_t u) { return poly::chem::legacy_residue_name(network.view(static_cast<Unit>(u)).legacy_code()); },
-          [&](std::size_t u) { return network.bonds(static_cast<Unit>(u)); });
+      write_psf(config.output_dir / std::format("config_{}_{}.psf", sample, poly::chem::legacy_conversion_tag(level)), network);
     }
     const ConnectivityTally& t = network.connectivity();
     say(std::format("sample {} snapshot at conversion {:.3f} (actual {:.4f}) time={:.6g} radicals={} bonds mm/pm/pp/intra={}/{}/{}/{}",

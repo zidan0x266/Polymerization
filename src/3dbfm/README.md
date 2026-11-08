@@ -42,19 +42,24 @@ Keys can be grouped under optional `[system]`, `[scheme]`, `[run]` and `[output]
 | | `snapshot_start`, `snapshot_step` | `0.03`, `0.01` | conversions at which output is written |
 | | `extra_snapshots` | — | additional conversions, comma separated |
 | | `log_every_mcs` | `1000` | progress report interval |
-| | `initial_configuration` | — | restart file to start from |
 | **Output** | `directory` | `.` | output directory |
-| | `write_pdb`, `write_psf`, `write_restart` | `true` | which files to write |
+| | `write_pdb`, `write_psf` | `true` | which snapshot files to write |
 
-## Output (per sample `s`)
+## Output
 
-- `structural_s.dat`: number of units of each structural type
-- `propagation_s.dat`: new bonds classified as monomer–monomer, polymer–monomer, polymer–polymer or intramolecular
-- `reactype_s.dat`: counts of each reaction type
-- `config_s_<conversion>.pdb/.psf`: configuration and bonds for visualization and network analysis
-- `equilibrated_s.dat`, `final_s.dat`: restart files
+For sample *s*:
 
-## Model notes
+- `structural_s.dat`, `propagation_s.dat`, `reactype_s.dat`: the tables of the lattice modules
+  (structural units, connectivity of new bonds, reaction categories), one line per snapshot.
+  `structural` and `reactype` start with the Monte Carlo steps and the conversion, `propagation`
+  with the conversion.
+- `config_s_<conversion>.pdb` and `.psf`: the configuration and the bonds at each snapshot
+  conversion, for visualization and network analysis (1-based ids and coordinates, legacy residue
+  names).
+- `run_config.ini`: the configuration of the run.
+- The log reports the Monte Carlo steps, conversion, reaction counts and radicals.
+
+## Model
 
 The defaults reproduce the implementation used in the publications listed in the repository
 README. Two choices can be changed:
@@ -89,19 +94,28 @@ reactions. One reaction step of this system takes about 1.6 ms, so a million ste
 
 ```
 include/bfm/
-  core/      basic types, random numbers and index sets
-  lattice/   bond-vector set and periodic lattice
-  model/     the simulated system (unit states from src/common)
-  reaction/  reaction schemes (FRP, ATRP; from src/common)
-  io/        configuration and output
-  sim/       simulation driver
-lib/         implementation
-apps/        bfm_react
+  model/   basic types, the bond-vector set, the periodic lattice and the system of units
+  sim/     the reactions (schemes from src/common, sampling of attempts) and the driver
+  io/      configuration and snapshots
+lib/       implementation
+apps/      bfm_react
 ```
 
 Unit tests are in [`tests/3dbfm`](../../tests/3dbfm). The chemistry (unit states, the FRP and ATRP
-reaction schemes, the reaction bookkeeping and the per-sample tables) is shared with the dll module
-and lives in [`src/common`](../common) (`poly/chem/`); `model/` and `reaction/` refer to it. A new
-polymerization mechanism is added there as a new `ReactionScheme`, which also declares which units
-are reactive, and is then available in both modules. The lattice and system classes are
-independent of the chemistry.
+reaction schemes, the reaction bookkeeping and the per-sample tables), the random number generator
+and the configuration reader are shared with the other modules and live in
+[`src/common`](../common) (`poly/chem/`); `sim/reaction.hpp` refers to it. A new polymerization
+mechanism is added there as a new `ReactionScheme`, which also declares which units are reactive,
+and is then available in all modules. The lattice and system classes are independent of the
+chemistry.
+
+## References
+
+1. I. Carmesin, K. Kremer. The bond fluctuation method: a new effective algorithm for the dynamics
+   of polymers in all spatial dimensions. *Macromolecules* **1988**, 21, 2819–2823.
+   [10.1021/ma00187a030](https://doi.org/10.1021/ma00187a030)
+2. H. P. Deutsch, K. Binder. Interdiffusion and self-diffusion in polymer mixtures: A Monte Carlo
+   study. *J. Chem. Phys.* **1991**, 94, 2294–2304. [10.1063/1.459901](https://doi.org/10.1063/1.459901)
+
+The studies that developed and used this code are listed in the
+[acknowledgements](../../README.md#acknowledgements) of the repository.

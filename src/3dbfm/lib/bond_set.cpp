@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "bfm/lattice/bond_set.hpp"
+#include "bfm/model/bond_set.hpp"
 
 #include <algorithm>
 #include <stdexcept>

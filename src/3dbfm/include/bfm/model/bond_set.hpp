@@ -4,7 +4,7 @@
 // The allowed bond-vector set of the 3D bond fluctuation model (Carmesin & Kremer; Deutsch &
 // Binder): all 108 vectors obtained from {[2,0,0],[2,1,0],[2,1,1],[2,2,1],[3,0,0],[3,1,0]} by
 // permutation and sign change. The generation order reproduces the legacy `bdibfl()` +
-// `iniffxyz()` routines exactly, so bond indices written to restart files keep their meaning.
+// `iniffxyz()` routines exactly, so that runs follow the legacy programs step by step.
 #pragma once
 
 #include <array>
@@ -12,7 +12,7 @@
 #include <span>
 #include <utility>
 
-#include "bfm/core/types.hpp"
+#include "bfm/model/types.hpp"
 
 namespace bfm {
 

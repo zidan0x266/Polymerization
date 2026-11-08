@@ -6,6 +6,7 @@ add_library(statistical STATIC
   lib/network.cpp
   lib/kinetics.cpp
   lib/config.cpp
+  lib/writers.cpp
   lib/run.cpp)
 target_include_directories(statistical PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(statistical PUBLIC poly::common poly::chemistry PRIVATE poly_warnings)

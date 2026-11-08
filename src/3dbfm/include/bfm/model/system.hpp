@@ -4,7 +4,7 @@
 // The simulated system: all units, their connectivity, the occupancy lattice and the molecule
 // bookkeeping needed to classify each new bond as monomer-monomer, polymer-monomer,
 // polymer-polymer or intramolecular (the legacy chain_premark/mark12 tally). This class knows how
-// to move units and how to bond them; it does not know any chemistry (see reaction/scheme.hpp).
+// to move units and how to bond them; it does not know any chemistry (see sim/reaction.hpp).
 #pragma once
 
 #include <array>
@@ -14,11 +14,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include "bfm/core/random.hpp"
-#include "bfm/core/types.hpp"
-#include "bfm/lattice/bond_set.hpp"
-#include "bfm/lattice/lattice.hpp"
-#include "bfm/model/unit.hpp"
+#include "bfm/model/types.hpp"
+#include "bfm/model/bond_set.hpp"
+#include "bfm/model/lattice.hpp"
 #include "poly/chem/progress.hpp"
 
 namespace bfm {
@@ -76,9 +74,9 @@ class BfmSystem {
   /// Place one cube per entry of `composition` at random, non-overlapping positions of the
   /// even sub-lattice (the legacy initial condition) and assign the states in order.
   void place_randomly(std::span<const UnitState> composition, Rng& rng);
-  /// Rebuild from explicit monomers (restart). `unwrapped` holds the unwrapped anchors (empty:
-  /// all units in the central image). Validates overlaps and bond consistency.
-  void load(std::vector<Monomer> monomers, std::span<const Vec3i> unwrapped = {});
+  /// Rebuild from explicit monomers, e.g. a configuration built by hand. Validates overlaps and
+  /// bond consistency.
+  void load(std::vector<Monomer> monomers);
 
   // ---- Monte Carlo elementary moves ---------------------------------------------------------
   /// Try to jump unit `id` one lattice site in direction `d`. Returns true if accepted.
@@ -102,14 +100,7 @@ class BfmSystem {
   [[nodiscard]] const Monomer& monomer(Index id) const noexcept { return monomers_[id]; }
   [[nodiscard]] Monomer& monomer(Index id) noexcept { return monomers_[id]; }
   [[nodiscard]] std::span<const Monomer> monomers() const noexcept { return monomers_; }
-  /// Unwrapped anchor (wrapped anchor plus periodic images), for trajectories and restarts.
-  [[nodiscard]] Vec3i unwrapped(Index id) const noexcept {
-    const Vec3i a = monomers_[id].anchor();
-    const Vec3i img = images_[id];
-    return {a.x + img.x * lattice_.lx(), a.y + img.y * lattice_.ly(), a.z + img.z * lattice_.lz()};
-  }
   [[nodiscard]] const PeriodicLattice& lattice() const noexcept { return lattice_; }
-  [[nodiscard]] const BondVectorSet& bond_set() const noexcept { return *bonds_; }
   [[nodiscard]] const ConnectivityTally& connectivity() const noexcept { return tally_; }
   void reset_connectivity_tally() noexcept { tally_ = {}; }
 
@@ -126,7 +117,6 @@ class BfmSystem {
   PeriodicLattice lattice_;
   const BondVectorSet* bonds_;
   std::vector<Monomer> monomers_;
-  std::vector<Vec3i> images_;  ///< periodic image of each unit; touched only when a move wraps
   std::vector<Index> parent_;
   ConnectivityTally tally_{};
 };

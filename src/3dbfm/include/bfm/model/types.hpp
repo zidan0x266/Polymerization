@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 //
-// Fundamental value types shared by every module of the 3D bond-fluctuation-model
-// (3DBFM) reactive Monte Carlo library.
+// Fundamental value types of the 3D bond fluctuation model (3DBFM), and the names the module
+// takes from src/common: random numbers, index sets and the states of the units.
 #pragma once
 
 #include <cstdint>
 #include <string_view>
 #include <utility>
+
+#include "poly/chem/unit.hpp"
+#include "poly/index_set.hpp"
+#include "poly/random.hpp"
 
 namespace bfm {
 
@@ -48,7 +52,7 @@ struct Vec3i {
 };
 
 /// The six nearest-neighbor jump directions. The enumeration order equals the legacy
-/// numbering (legacy 1..6 -> 0..5) so that tables and restart files stay comparable.
+/// numbering (legacy 1..6 -> 0..5) so that runs stay comparable with the legacy programs.
 enum class Direction : std::uint8_t { PlusX = 0, PlusY = 1, PlusZ = 2, MinusZ = 3, MinusY = 4, MinusX = 5 };
 inline constexpr int kNumDirections = 6;
 
@@ -75,5 +79,19 @@ inline constexpr int kNumDirections = 6;
   }
   std::unreachable();
 }
+
+using Rng = poly::Rng;
+using poly::splitmix64;
+using poly::Xoshiro256pp;
+using IndexSet = poly::IndexSet<Index>;
+
+using poly::chem::kNumLegacyTypeCodes;
+using poly::chem::legacy_residue_name;
+using poly::chem::legacy_species_code;
+using poly::chem::legacy_type_code;
+using poly::chem::max_vinyls;
+using poly::chem::Species;
+using poly::chem::UnitState;
+using poly::chem::UnitView;
 
 }  // namespace bfm

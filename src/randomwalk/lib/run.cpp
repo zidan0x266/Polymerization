@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "rw/run.hpp"
+#include "rw/sim/run.hpp"
 
 #include <chrono>
 #include <cmath>
@@ -13,7 +13,7 @@
 #include <stdexcept>
 
 #include "rw/io/writers.hpp"
-#include "rw/walk/packer.hpp"
+#include "rw/sim/packer.hpp"
 
 namespace rw {
 

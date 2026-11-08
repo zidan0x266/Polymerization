@@ -48,8 +48,9 @@ composition and snapshot keys mean the same as in the [3dbfm module](../3dbfm/RE
 For sample *s*:
 
 - `structural_s.dat`, `propagation_s.dat`, `reactype_s.dat`: the tables of the lattice modules
-  (structural units, connectivity of new bonds, reaction categories), one line per snapshot. The
-  first column is the time, the second the conversion.
+  (structural units, connectivity of new bonds, reaction categories), one line per snapshot.
+  `structural` and `reactype` start with the time and the conversion, `propagation` with the
+  conversion.
 - `config_s_<conversion>.psf`: the network topology at each snapshot conversion, in the layout of
   the lattice modules (legacy residue names, every bond listed from both ends). There are no
   coordinates, so no PDB files are written.
@@ -124,7 +125,7 @@ in 0.3 s on one core of an Apple M4. Writing the PSF snapshots takes most of the
 include/statistical/
   model/   the network: units, bonds and molecules
   sim/     the kinetic Monte Carlo and the driver
-  io/      configuration
+  io/      configuration and snapshots
 lib/       implementation
 apps/      stat_react
 ```

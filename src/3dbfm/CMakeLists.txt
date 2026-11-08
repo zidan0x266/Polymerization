@@ -6,7 +6,8 @@ add_library(bfm STATIC
   lib/system.cpp
   lib/config.cpp
   lib/writers.cpp
-  lib/simulation.cpp)
+  lib/reaction.cpp
+  lib/run.cpp)
 target_include_directories(bfm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(bfm PUBLIC poly::common poly::chemistry PRIVATE poly_warnings)
 add_library(poly::bfm ALIAS bfm)

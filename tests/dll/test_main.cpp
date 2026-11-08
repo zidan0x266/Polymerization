@@ -356,7 +356,7 @@ void test_config() {
   CHECK(!cfg.set("chainlength", "4").has_value());
   CHECK(cfg.set("reaction_partner", "All_Neighbors").has_value() && cfg.reaction_partner == ReactionPartner::AllNeighbors);
   CHECK(!cfg.set("reaction_partner", "nearest").has_value());
-  cfg.apply_overrides({"cells=6", "n_units=300", "--chain_length=12", "n_chains=40", "run.seed=3", "dump_every=10",
+  cfg.apply_overrides({"cells=6", "n_units=300", "--chain_length=12", "n_chains=40", "run.seed=3",
                        "mechanism=FRP", "k_init=0.01", "radical_fraction=0.02", "extra_snapshots=0.255"});
   CHECK(cfg.mechanism == "frp" && cfg.n_units == 300);
   CHECK(cfg.set("cyclization", "no").has_value() && !cfg.cyclization);
@@ -587,7 +587,7 @@ void test_living_chains() {
   CHECK(sys.connectivity().polymer_polymer == 0 && sys.connectivity().intramolecular == 0);
 }
 
-void test_output_and_restart() {
+void test_output() {
   const auto scheme = poly::chem::make_scheme("atrp", RateConstants{0, 0.5, 0.5, 0}, CompetitionRule::Legacy);
   poly::Rng rng(31);
   const auto states = scheme->initial_composition(400, 0.8, 0.05);
@@ -605,19 +605,6 @@ void test_output_and_restart() {
 
   const auto dir = std::filesystem::temp_directory_path() / "dll_test_output";
   std::filesystem::create_directories(dir);
-  write_configuration(dir / "c.dat", sys);
-  const DllSystem back = read_configuration(dir / "c.dat");
-  bool same = back.size() == sys.size() && back.solute_beads() == sys.solute_beads() && back.n_chains() == sys.n_chains();
-  for (Bead b = 0; same && b < sys.solute_beads(); ++b) {
-    auto mine = std::vector<Bead>(sys.bonds(b).begin(), sys.bonds(b).end());
-    auto theirs = std::vector<Bead>(back.bonds(b).begin(), back.bonds(b).end());
-    std::ranges::sort(mine);
-    std::ranges::sort(theirs);
-    same = sys.unwrapped(b) == back.unwrapped(b) && mine == theirs &&
-           (sys.type(b) != BeadType::Unit || sys.state(b) == back.state(b));
-  }
-  CHECK(same && back.validate().has_value());
-
   write_psf(dir / "c.psf", sys);
   write_pdb(dir / "c.pdb", sys);
   std::ifstream psf(dir / "c.psf");
@@ -643,21 +630,15 @@ void test_driver() {
   Config cfg;
   cfg.apply_overrides({"cells=5", "n_units=450", "monovinyl_fraction=0.9", "radical_fraction=0.04", "n_chains=4", "chain_length=6",
                        "k_p1=0.5", "k_p2=0.25", "seed=5", "equilibration_steps=20", "stop_conversion=0.5", "snapshot_start=0.2",
-                       "snapshot_step=0.1", "dump_every=100", "samples=2", "directory=" + dir.string()});
+                       "snapshot_step=0.1", "samples=2", "directory=" + dir.string()});
   std::ostringstream log;
   const DllSystem last = run(cfg, log);
   CHECK(last.validate().has_value());
-  for (const char* name : {"run_config.ini", "equilibrated_2.dat", "final_2.dat", "structural_1.dat", "propagation_1.dat",
-                           "reactype_2.dat", "config_1_0.200000.psf", "config_2_0.500000.pdb", "trajectory_1.lammpstrj"}) {
+  for (const char* name : {"run_config.ini", "structural_1.dat", "propagation_1.dat", "reactype_2.dat", "config_1_0.200000.psf",
+                           "config_2_0.500000.pdb"}) {
     CHECK(std::filesystem::exists(dir / name));
   }
   CHECK(log.str().contains("stop_conversion reached"));
-  // continue from the final configuration of sample 1
-  Config again = cfg;
-  again.apply_overrides({"initial_configuration=" + (dir / "final_1.dat").string(), "stop_conversion=0.6", "samples=1",
-                         "directory=" + (dir / "again").string()});
-  std::ostringstream log2;
-  CHECK(run(again, log2).validate().has_value() && log2.str().contains("loading configuration"));
   std::filesystem::remove_all(dir);
 }
 
@@ -674,7 +655,7 @@ int main() {
   test_reaction_probabilities();
   test_reacting_systems();
   test_living_chains();
-  test_output_and_restart();
+  test_output();
   test_driver();
   std::cout << g_checks - g_failures << " / " << g_checks << " checks passed\n";
   return g_failures == 0 ? 0 : 1;

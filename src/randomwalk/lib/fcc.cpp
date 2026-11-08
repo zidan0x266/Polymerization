@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 
-#include "rw/lattice/fcc.hpp"
+#include "rw/model/fcc.hpp"
 
 #include <cassert>
 

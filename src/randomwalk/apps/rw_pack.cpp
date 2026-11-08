@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "rw/io/config.hpp"
-#include "rw/run.hpp"
+#include "rw/sim/run.hpp"
 
 namespace {
 

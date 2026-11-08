@@ -26,7 +26,8 @@ constexpr std::string_view kUsage =
     "       dll_react --print-config\n\n"
     "Reactive dynamic lattice liquid simulation (FRP or ATRP) on a fully occupied FCC lattice.\n"
     "Keys given on the command line override the file. Run with --print-config to see every\n"
-    "key and its default.\n";
+    "key and its default.\n\n"
+    "Please cite the papers listed in README.md under 'Acknowledgements'.\n";
 
 }  // namespace
 

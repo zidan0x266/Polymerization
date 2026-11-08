@@ -74,7 +74,7 @@ def main():
                 if "bfm" in a.models:
                     print(f"mkdir -p bfm/{case} && cd bfm/{case} && $POLY_BUILD/src/3dbfm/bfm_react "
                           f"$EXAMPLE/../example_1/{m}_paper.ini 'lattice={edge} {edge} {edge}' n_units={n_bfm} "
-                          f"{rates(m, k_init)} {common} seed={seed('bfm', m, x, s)} write_pdb=false write_restart=false "
+                          f"{rates(m, k_init)} {common} seed={seed('bfm', m, x, s)} write_pdb=false "
                           f"> run.log 2>&1 && python3 $EXAMPLE/analyze.py lattice .")
                 if "stat" in a.models:
                     print(f"mkdir -p stat/{case} && cd stat/{case} && $POLY_BUILD/src/statistical/stat_react /dev/null "

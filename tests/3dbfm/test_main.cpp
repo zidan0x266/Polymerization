@@ -17,15 +17,13 @@
 #include <tuple>
 #include <vector>
 
-#include "bfm/core/index_set.hpp"
-#include "bfm/core/random.hpp"
 #include "bfm/io/config.hpp"
 #include "bfm/io/writers.hpp"
-#include "bfm/lattice/bond_set.hpp"
-#include "bfm/lattice/lattice.hpp"
+#include "bfm/model/bond_set.hpp"
+#include "bfm/model/lattice.hpp"
 #include "bfm/model/system.hpp"
-#include "bfm/reaction/scheme.hpp"
-#include "bfm/sim/simulation.hpp"
+#include "bfm/sim/reaction.hpp"
+#include "bfm/sim/run.hpp"
 
 namespace {
 
@@ -160,7 +158,7 @@ void test_lattice_and_moves() {
   for (int mcs = 0; mcs < 300; ++mcs) {
     for (Index i = 0; i < sys.size(); ++i) {
       const auto id = static_cast<Index>(rng.below(static_cast<std::uint32_t>(sys.size())));
-      accepted += sys.attempt_move(id, rng.random_direction()) ? 1 : 0;
+      accepted += sys.attempt_move(id, static_cast<Direction>(rng.below(kNumDirections))) ? 1 : 0;
       ++attempts;
     }
   }
@@ -182,16 +180,13 @@ void test_lattice_and_moves() {
   CHECK((two.monomer(0).anchor() == Vec3i{0, 1, 0}));
   two.validate();
 
-  // crossing the periodic boundary wraps the anchor and counts the image
+  // crossing the periodic boundary wraps the anchor
   CHECK(two.attempt_move(0, Direction::MinusX));
   CHECK((two.monomer(0).anchor() == Vec3i{7, 1, 0}));
-  CHECK((two.unwrapped(0) == Vec3i{-1, 1, 0}));
   CHECK(two.attempt_move(0, Direction::PlusX));
-  CHECK((two.unwrapped(0) == Vec3i{0, 1, 0}));
-  CHECK(two.attempt_move(1, Direction::PlusZ) && two.attempt_move(1, Direction::PlusZ));
-  for (int i = 0; i < 7; ++i) CHECK(two.attempt_move(1, Direction::PlusZ));
+  CHECK((two.monomer(0).anchor() == Vec3i{0, 1, 0}));
+  for (int i = 0; i < 9; ++i) CHECK(two.attempt_move(1, Direction::PlusZ));
   CHECK((two.monomer(1).anchor() == Vec3i{2, 0, 1}));
-  CHECK((two.unwrapped(1) == Vec3i{2, 0, 9}));
   two.validate();
 
   // periodic wrap of unit_anchored_at: unit at x=6 on an 8-lattice is at offset (-2,0,0) from x=0
@@ -498,7 +493,7 @@ void test_composition() {
 }
 
 // ------------------------------------------------------------------------------------------------
-void test_config_and_restart() {
+void test_config() {
   namespace fs = std::filesystem;
   const fs::path dir = fs::temp_directory_path() / "bfm_test_cfg";
   fs::create_directories(dir);
@@ -539,46 +534,6 @@ void test_config_and_restart() {
   }
   CHECK(Config::from_file(dir / "b.ini").rates.k_px == 0.4);
 
-  // restart round trip through the legacy format
-  const BondVectorSet set;
-  Rng rng(99);
-  BfmSystem sys(PeriodicLattice(16, 16, 16), set);
-  const auto frp = make_scheme("frp", RateConstants{1e-3, 0.5, 0.25, 0.95}, CompetitionRule::Legacy);
-  sys.place_randomly(frp->initial_composition(400, 0.9, 0.01), rng);
-  for (int mcs = 0; mcs < 50; ++mcs) {
-    for (Index i = 0; i < sys.size(); ++i) sys.attempt_move(static_cast<Index>(rng.below(400)), rng.random_direction());
-  }
-  int bonded = 0;
-  for (Index id = 0; id < sys.size() && bonded < 40; ++id) {
-    for (int slot = 0; slot < kNumReactionOffsets; ++slot) {
-      const Index p = sys.partner_at(id, slot);
-      if (p == kNone || sys.monomer(id).nbonds >= 1 || sys.monomer(p).nbonds >= 1) continue;
-      sys.bond_through_offset(id, p, slot);
-      ++bonded;
-      break;
-    }
-  }
-  write_legacy_configuration(dir / "restart.dat", sys);
-  const Vec3i box{16, 16, 16};
-  const auto loaded = read_legacy_configuration(dir / "restart.dat", box, 400);
-  CHECK(loaded.units.size() == 400 && loaded.unwrapped.size() == 400);
-  bool same = true;
-  bool any_image = false;
-  for (Index i = 0; i < sys.size(); ++i) {
-    const Monomer& a = sys.monomer(i);
-    const Monomer& b = loaded.units[static_cast<std::size_t>(i)];
-    same = same && a.anchor() == b.anchor() && sys.unwrapped(i) == loaded.unwrapped[static_cast<std::size_t>(i)] &&
-           a.nbonds == b.nbonds && a.state == b.state;
-    any_image = any_image || a.anchor() != sys.unwrapped(i);
-    for (int k = 0; k < a.nbonds; ++k) same = same && a.bond(k).partner == b.bond(k).partner && a.bond(k).vector == b.bond(k).vector;
-  }
-  CHECK(same);
-  CHECK(any_image);  // some units crossed the boundary in 50 MCS, so images are exercised
-  BfmSystem again(PeriodicLattice(16, 16, 16), set);
-  again.load(loaded.units, loaded.unwrapped);  // validates occupancy and bond geometry
-  bool same_images = true;
-  for (Index i = 0; i < sys.size(); ++i) same_images = same_images && again.unwrapped(i) == sys.unwrapped(i);
-  CHECK(same_images);
   fs::remove_all(dir);
 }
 
@@ -651,7 +606,7 @@ void test_reactive_sampling() {
   BfmSystem sys(PeriodicLattice(16, 16, 16), bonds);
   sys.place_randomly(std::vector<UnitState>(300, UnitState::monovinyl_monomer()), rng);
   for (int mcs = 0; mcs < 20; ++mcs) {
-    for (Index i = 0; i < sys.size(); ++i) sys.attempt_move(static_cast<Index>(rng.below(300)), rng.random_direction());
+    for (Index i = 0; i < sys.size(); ++i) sys.attempt_move(static_cast<Index>(rng.below(300)), static_cast<Direction>(rng.below(kNumDirections)));
   }
   const auto n = static_cast<std::uint32_t>(sys.size());
   const auto enumerate = [&](const IndexSet& reactive) {
@@ -695,7 +650,7 @@ int main() {
   test_scheme_fidelity();
   test_categories();
   test_composition();
-  test_config_and_restart();
+  test_config();
   test_reactive_sampling();
   std::cout << g_checks - g_failures << " / " << g_checks << " checks passed\n";
   return g_failures == 0 ? 0 : 1;

@@ -13,7 +13,7 @@
 #include <string_view>
 #include <vector>
 
-#include "rw/walk/packer.hpp"
+#include "rw/sim/packer.hpp"
 
 namespace rw {
 

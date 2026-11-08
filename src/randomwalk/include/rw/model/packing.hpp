@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-#include "rw/lattice/fcc.hpp"
+#include "rw/model/fcc.hpp"
 
 namespace rw {
 

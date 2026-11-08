@@ -20,9 +20,9 @@
 
 #include "rw/io/config.hpp"
 #include "rw/io/writers.hpp"
-#include "rw/lattice/fcc.hpp"
+#include "rw/model/fcc.hpp"
 #include "rw/model/packing.hpp"
-#include "rw/walk/packer.hpp"
+#include "rw/sim/packer.hpp"
 
 namespace {
 

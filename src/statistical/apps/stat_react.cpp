@@ -24,7 +24,8 @@ constexpr std::string_view kUsage =
     "usage: stat_react [config.ini] [key=value ...]\n"
     "       stat_react --print-config\n\n"
     "Coordinate-free kinetic Monte Carlo of radical polymerization (FRP or ATRP). Keys given on the\n"
-    "command line override the file. Run with --print-config to see every key and its default.\n";
+    "command line override the file. Run with --print-config to see every key and its default.\n\n"
+    "Please cite the papers listed in README.md under 'Acknowledgements'.\n";
 
 }  // namespace
 

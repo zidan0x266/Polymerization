@@ -57,12 +57,8 @@ composition, chemistry and snapshot keys mean the same as in the
 | | `snapshot_start`, `snapshot_step` | `0.03`, `0.01` | conversions at which snapshots are written |
 | | `extra_snapshots` | — | further snapshot conversions, comma separated |
 | | `log_every` | `1000` | progress report interval in time steps |
-| | `initial_configuration` | — | configuration file to start from (`equilibrated_*.dat`, `final_*.dat`); the system keys are then ignored |
 | **Output** | `directory` | `.` | output directory |
-| | `write_pdb`, `write_psf` | `true` | PDB and PSF snapshots |
-| | `write_restart` | `true` | configuration files after the equilibration and at the end |
-| | `dump_every` | `0` | write a trajectory frame every this many steps; `0` writes none |
-| | `dump_solvent` | `false` | include the solvent in the trajectory |
+| | `write_pdb`, `write_psf` | `true` | which snapshot files to write |
 
 As in 3dbfm, the initiators are counted among the monovinyl units: a composition
 [I]₀ : [X]₀ : [M]₀ = 1 : 2 : 100 is `radical_fraction = 1/103` and `monovinyl_fraction = 101/103`.
@@ -73,18 +69,13 @@ consumed vinyl.
 
 For sample *s*:
 
-- `structural_s.dat`, `propagation_s.dat`, `reactype_s.dat`: the tables of the 3dbfm module
-  (structural units, connectivity of new bonds, reaction categories), one line per snapshot. The
-  first column is the time step, the second the conversion reached at that step.
+- `structural_s.dat`, `propagation_s.dat`, `reactype_s.dat`: the tables of the lattice modules
+  (structural units, connectivity of new bonds, reaction categories), one line per snapshot.
+  `structural` and `reactype` start with the time step and the conversion reached at that step,
+  `propagation` with the conversion.
 - `config_s_<conversion>.pdb` and `.psf`: snapshots in the 3dbfm layout, with the units and
   precursor-chain beads (residue `CHN`) but not the solvent; lengths in bond lengths. A snapshot
   is written at the end of the time step in which the conversion passes its level.
-- `equilibrated_s.dat`, `final_s.dat`: configuration files (unwrapped positions, unit states and
-  bonds) from which a run can continue with `initial_configuration`.
-- `trajectory_s.lammpstrj`: frames in the LAMMPS dump format (read by OVITO, VMD and most analysis
-  tools) with unwrapped positions in bond lengths. `mol` identifies the molecule (0 for solvent);
-  `type` is 1 for precursor chains, 2 for solvent and 3 plus the legacy structural code (0–9) for
-  units.
 - `run_config.ini`: the configuration of the run.
 - The log reports the conversion and reaction counts, the fraction of beads that moved per step,
   the shares of loops removed because they would break a bond or let chains cross, and the time
@@ -224,7 +215,7 @@ a later phase.
 include/dll/
   model/   the fully occupied lattice with its units and molecules, and the starting configurations
   sim/     the motion and reaction stages of a time step, the crossing test, and the driver
-  io/      configuration, snapshots, trajectories and configuration files
+  io/      configuration and snapshots
 lib/       implementation
 apps/      dll_react
 ```

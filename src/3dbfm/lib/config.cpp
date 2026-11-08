@@ -64,17 +64,12 @@ std::expected<void, std::string> Config::set(std::string_view raw_key, std::stri
   if (key == "snapshot_step") return assign(snapshot_step, parse_number<double>(key, value));
   if (key == "extra_snapshots") return assign(extra_snapshots, parse_double_list(key, value));
   if (key == "log_every_mcs") return assign(log_every_mcs, parse_number<long>(key, value));
-  if (key == "initial_configuration") {
-    initial_configuration = trim(value);
-    return {};
-  }
   if (key == "directory" || key == "output_dir") {
     output_dir = trim(value);
     return {};
   }
   if (key == "write_pdb") return assign(write_pdb, parse_bool(key, value));
   if (key == "write_psf") return assign(write_psf, parse_bool(key, value));
-  if (key == "write_restart") return assign(write_restart, parse_bool(key, value));
   return std::unexpected(std::format("unknown configuration key '{}'", raw_key));
 }
 
@@ -146,17 +141,15 @@ std::string Config::to_ini() const {
       "snapshot_start = {}\n"
       "snapshot_step = {}\n"
       "extra_snapshots = {}\n"
-      "log_every_mcs = {}\n"
-      "initial_configuration = {}\n\n"
+      "log_every_mcs = {}\n\n"
       "[output]\n"
       "directory = {}\n"
       "write_pdb = {}\n"
-      "write_psf = {}\n"
-      "write_restart = {}\n",
+      "write_psf = {}\n",
       lattice_x, lattice_y, lattice_z, n_units, monovinyl_fraction, radical_fraction, mechanism, rates.k_init, rates.k_p1,
       poly::chem::k_px_ini_line(rates), rates.k_p2, rates.k_term, to_string(competition_rule), yesno(initiation_requires_neighbor), samples, first_sample, seed,
       mcs_initial_relaxation, mcs_equilibration, max_mcs, stop_conversion, snapshot_start, snapshot_step, extra, log_every_mcs,
-      initial_configuration.string(), output_dir.string(), yesno(write_pdb), yesno(write_psf), yesno(write_restart));
+      output_dir.string(), yesno(write_pdb), yesno(write_psf));
 }
 
 }  // namespace bfm

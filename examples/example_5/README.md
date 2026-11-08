@@ -83,10 +83,10 @@ python3 $E/analyze.py compare . > comparison.md
 ```
 
 `MPIRUN=` (empty) runs each LAMMPS sample as one process, and `xargs -P 4` runs four side by side,
-one per performance core of an Apple M4 Mac mini, which leaves the machine usable. A LAMMPS run
-takes about 30 s (ATRP) or 50 s (FRP) up to conversion 0.8, a lattice run a few seconds, so the 30
-LAMMPS and 60 lattice runs take a few minutes. Running on to conversion 0.96 more than doubles the
-LAMMPS time (`--stop 0.96`); more samples (`--samples 15`) narrow the error bars.
+one per performance core of an Apple M4 Mac mini, which leaves the machine usable. Mini runs stop at
+conversion 0.8 for FRP and 0.96 for ATRP, whose gel point comes close to 0.8 at 4 % cross-linker; a
+LAMMPS run takes about 30 s, a lattice run seconds to half a minute, and the 30 LAMMPS and 60
+lattice runs about seven minutes in all. More samples (`--samples 15`) narrow the error bars.
 
 ### Runs on a cluster
 
@@ -145,5 +145,62 @@ For every mechanism and cross-linker fraction, as mean ± standard error over th
   polymer–monomer, polymer–polymer or intramolecular as in the lattice modules (a unit without
   bonds is a monomer).
 
-The pipeline has been tested at the smoke size; the results of the full comparison will be added
-here.
+A gel point is only reported when RDP has passed its maximum before the end of the run; runs that
+end earlier are counted separately.
+
+## Results: mini systems
+
+From the commands under *Runs on a workstation* (5 samples per case; 3dbfm and statistical with
+4,176 units, LAMMPS with 4,000 beads; 2 % initiator, so 83 and 80 chains). Mean ± standard error.
+
+Gel point, vinyl conversion at the maximum of RDP:
+
+| [X] | ATRP 3dbfm | ATRP statistical | ATRP LAMMPS | FRP 3dbfm | FRP statistical | FRP LAMMPS |
+|:--|--:|--:|--:|--:|--:|--:|
+| 4 % | 0.880 ± 0.024 | 0.820 ± 0.016 | 0.884 ± 0.011 | 0.39 ± 0.06 | 0.39 ± 0.04 | 0.40 ± 0.08 |
+| 12 % | 0.614 ± 0.016 | 0.498 ± 0.018 | 0.607 ± 0.024 | 0.20 ± 0.03 | 0.26 ± 0.06 | 0.22 ± 0.06 |
+| 20 % | 0.488 ± 0.015 | 0.408 ± 0.009 | 0.473 ± 0.028 | 0.14 ± 0.02 | 0.12 ± 0.03 | 0.21 ± 0.03 |
+
+New bonds within a molecule (rings and intramolecular cross-links), as a fraction of all new bonds
+up to conversion 0.2 and 0.8:
+
+| [X] | | 3dbfm | statistical | LAMMPS |
+|:--|:--|--:|--:|--:|
+| 4 % | ATRP, 0.2 | 0.0013 ± 0.0000 | 0.0000 ± 0.0000 | 0.0003 ± 0.0003 |
+| | ATRP, 0.8 | 0.0048 ± 0.0005 | 0.0005 ± 0.0002 | 0.0042 ± 0.0003 |
+| 12 % | ATRP, 0.2 | 0.0030 ± 0.0009 | 0.0000 ± 0.0000 | 0.0024 ± 0.0009 |
+| | ATRP, 0.8 | 0.0314 ± 0.0014 | 0.0293 ± 0.0014 | 0.0332 ± 0.0012 |
+| 20 % | ATRP, 0.2 | 0.0059 ± 0.0010 | 0.0002 ± 0.0002 | 0.0062 ± 0.0010 |
+| | ATRP, 0.8 | 0.0689 ± 0.0008 | 0.0665 ± 0.0005 | 0.0721 ± 0.0010 |
+| 4 % | FRP, 0.2 | 0.0036 ± 0.0009 | 0.0000 ± 0.0000 | 0.0040 ± 0.0008 |
+| | FRP, 0.8 | 0.0157 ± 0.0004 | 0.0121 ± 0.0008 | 0.0165 ± 0.0006 |
+| 12 % | FRP, 0.2 | 0.0091 ± 0.0017 | 0.0047 ± 0.0006 | 0.0134 ± 0.0024 |
+| | FRP, 0.8 | 0.0545 ± 0.0020 | 0.0477 ± 0.0009 | 0.0562 ± 0.0016 |
+| 20 % | FRP, 0.2 | 0.0178 ± 0.0035 | 0.0091 ± 0.0013 | 0.0264 ± 0.0027 |
+| | FRP, 0.8 | 0.0917 ± 0.0011 | 0.0843 ± 0.0006 | 0.0972 ± 0.0011 |
+
+Molecules of two or more units at conversion 0.05: in ATRP 67, 71 and 72 (3dbfm), 66, 70 and 71
+(statistical) and 68, 70 and 72 (LAMMPS) at 4, 12 and 20 % cross-linker; in FRP two or three in
+every model. Bonds between two polymers make up 1.2–2.2 % of all new bonds at conversion 0.8 in
+ATRP and 0.4–0.6 % in FRP, alike in the three models.
+
+- **ATRP.** LAMMPS gels at the same conversion as 3dbfm at every cross-linker fraction. The
+  statistical model, without space, gels earlier by 0.06–0.12: as in the dynamic lattice liquid
+  study of Lyu et al. (*Macromolecules* **2018**, 51, 6673), spatial restrictions delay gelation.
+- **FRP.** The gel points agree within their large scatter, which comes from the few chains that
+  grow at a time in a small box (two or three at conversion 0.05); at 20 % cross-linker LAMMPS gels
+  somewhat later.
+- **Rings.** Both spatial models form rings from the start, the statistical model hardly before
+  the network is large. LAMMPS forms somewhat more rings than 3dbfm early in FRP (0.026 against
+  0.018 at 20 % cross-linker and conversion 0.2), a difference of the motion of the beads.
+- The models need not agree: they move the units differently, and the ratio of reaction to
+  diffusion shapes the networks (Zhang et al., *Macromolecules* **2025**, 58, 3168). What must agree
+  is the chemistry, which the reaction files reproduce exactly, and the meaning of the rate
+  constants: in all three, a radical and a monomer, or two radicals, have two chances per step or
+  check, one from each side. This comparison found that `partner random` first let only the
+  radicals draw a partner, which doubled termination relative to propagation; FRP then gelled at
+  0.49, 0.29 and 0.22. With every reactive bead drawing a partner, as now, the FRP gel points agree.
+
+These mini systems use 2 % initiator and `k_init` = 10⁻⁴ instead of the paper's 0.2 % and 10⁻⁵, and
+ten times the paper's ATRP rate constants in LAMMPS; the comparison at the size and composition of
+the paper is to be run on a cluster.

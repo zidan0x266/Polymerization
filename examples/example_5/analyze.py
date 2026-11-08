@@ -112,29 +112,48 @@ def fraction(d, key, cv):
     return None if bonds[0] is None else at(d, key, cv) / max(sum(bonds), 1)
 
 
+class Censored:
+    """A run that ended before the quantity could be found (e.g. RDP still rising at the end)."""
+
+
 def cell(values, digits):
-    v = [x for x in values if x is not None]
+    censored = sum(isinstance(x, Censored) for x in values)
+    v = [x for x in values if x is not None and not isinstance(x, Censored)]
+    note = f", {censored} ended before" if censored else ""
     if not v:
-        return "—"
+        return f"— ({censored} ended before)" if censored else "—"
     if len(v) == 1:
-        return f"{v[0]:.{digits}f}"
-    return f"{np.mean(v):.{digits}f} ± {np.std(v, ddof=1) / np.sqrt(len(v)):.{digits}f} ({len(v)})"
+        return f"{v[0]:.{digits}f}" + (f" ({note[2:]})" if note else "")
+    return f"{np.mean(v):.{digits}f} ± {np.std(v, ddof=1) / np.sqrt(len(v)):.{digits}f} ({len(v)}{note})"
+
+
+def gel_point(d):
+    """Conversion at the maximum of RDP; Censored if the maximum is at the last record (the run
+    ended before RDP went down again), None if the run is too short to tell."""
+    if d["cv"][-1] < 0.5:
+        return None
+    i = int(np.argmax(d["rdp"]))
+    return Censored() if i >= len(d["rdp"]) - 1 else d["cv"][i]
 
 
 def table(root, mechanism, title, value, digits):
+    """One row per cross-linker fraction with runs, one column per model with runs."""
+    models = [(m, name) for m, name in MODELS if any(runs(root, m, f"{mechanism}_X{x:02d}") for x in X)]
+    rows = [x for x in X if any(runs(root, m, f"{mechanism}_X{x:02d}") for m, _ in models)]
+    if not rows:
+        return
     print(f"\n{mechanism.upper()}: {title}\n")
-    print("| [X] | " + " | ".join(name for _, name in MODELS) + " |")
-    print("|:--|" + "--:|" * len(MODELS))
-    for x in X:
-        cells = [cell([value(d) for d in runs(root, m, f"{mechanism}_X{x:02d}")], digits) for m, _ in MODELS]
+    print("| [X] | " + " | ".join(name for _, name in models) + " |")
+    print("|:--|" + "--:|" * len(models))
+    for x in rows:
+        cells = [cell([value(d) for d in runs(root, m, f"{mechanism}_X{x:02d}")], digits) for m, _ in models]
         print(f"| {x} % | " + " | ".join(cells) + " |")
 
 
 def compare(root):
     print("Mean ± standard error (number of runs).")
     for m in ("atrp", "frp"):
-        table(root, m, "gel point, vinyl conversion at the maximum of RDP",
-              lambda d: d["cv"][int(np.argmax(d["rdp"]))] if d["cv"][-1] >= 0.5 else None, 3)
+        table(root, m, "gel point, vinyl conversion at the maximum of RDP", gel_point, 3)
         table(root, m, "molecules of 2 or more units at conversion 0.05", lambda d: at(d, "molecules", 0.05), 0)
         for cv in (0.2, 0.8):
             table(root, m, f"intramolecular bonds / all new bonds at conversion {cv}", lambda d, cv=cv: fraction(d, "intra", cv), 4)

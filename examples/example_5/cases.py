@@ -14,8 +14,11 @@ of the paper, the default, or with those of the paper, in md_paper/).
 
 The paper and reduced sizes have the composition and rate constants of the paper (0.2 % initiator,
 k_init = 1e-5) and run up to conversion 0.96. A mini system holds too few chains at 0.2 % initiator,
-so mini and smoke default to 2 % initiator and k_init = 1e-4 (k_init / k_p1 = 2e-4), and stop at
-conversion 0.8: the gel points lie below, and the last vinyls take most of the time.
+so mini and smoke default to 2 % initiator and k_init = 1e-4 (k_init / k_p1 = 2e-4). FRP mini runs
+stop at conversion 0.8, since their gel points lie far below and the last vinyls take most of the
+time; ATRP runs go to 0.96, since with short chains the gel point can come close to 0.8. LAMMPS
+writes its output every 100 steps in mini and smoke runs (every 1000 otherwise), so that conversion
+advances by less than 0.01 between lines, as between the snapshots of the lattice runs.
 """
 import argparse
 
@@ -48,15 +51,15 @@ def main():
     p.add_argument("--x", type=int, nargs="+", default=[4, 8, 12, 16, 20])
     p.add_argument("--init", type=float, help="initiator fraction (default 0.002, mini and smoke 0.02)")
     p.add_argument("--k-init", type=float, help="FRP initiation (default 1e-5, mini and smoke 1e-4)")
-    p.add_argument("--stop", type=float, help="conversion at which runs end (default 0.96, mini and smoke 0.8)")
+    p.add_argument("--stop", type=float, help="conversion at which runs end (default 0.96; mini and smoke FRP 0.8)")
     p.add_argument("--models", nargs="+", default=["bfm", "stat"], help="lattice only")
     p.add_argument("--rates", choices=("fast", "paper"), default="fast", help="md only")
     a = p.parse_args()
     edge, n_bfm, n_stat, cells = SIZES[a.size]
     init = a.init if a.init is not None else (0.02 if a.size in SMALL else 0.002)
     k_init = a.k_init if a.k_init is not None else (1e-4 if a.size in SMALL else 1e-5)
-    a.stop = a.stop if a.stop is not None else (0.8 if a.size in SMALL else 0.96)
     for m in a.mechanisms:
+        stop = a.stop if a.stop is not None else (0.8 if a.size in SMALL and m == "frp" else 0.96)
         for x in a.x:
             for s in range(1, a.samples + 1):
                 case = f"{m}_X{x:02d}_s{s}"
@@ -67,10 +70,10 @@ def main():
                           f"interval=20 cutoff=1.2 bond_type=1 angle_type=1 > react.cfg && $MPIRUN $LMP "
                           f"-in $EXAMPLE/in.radical -var plugin $PLUGIN -var rf react.cfg -var mechanism {m} "
                           f"-var cells {cells} -var xl {x / 100:.2f} -var init {init:g} -var seed {seed('md', m, x, s)} "
-                          f"-var stop {a.stop} -var out 1000 -var tag {case} -screen none")
+                          f"-var stop {stop} -var out {100 if a.size in SMALL else 1000} -var tag {case} -screen none")
                     continue
                 common = (f"radical_fraction={init:g} monovinyl_fraction={1 - x / 100:.2f} samples=1 first_sample={s} "
-                          f"stop_conversion={a.stop} snapshot_start=0.01 snapshot_step=0.01 directory=.")
+                          f"stop_conversion={stop} snapshot_start=0.01 snapshot_step=0.01 directory=.")
                 if "bfm" in a.models:
                     print(f"mkdir -p bfm/{case} && cd bfm/{case} && $POLY_BUILD/src/3dbfm/bfm_react "
                           f"$EXAMPLE/../example_1/{m}_paper.ini 'lattice={edge} {edge} {edge}' n_units={n_bfm} "

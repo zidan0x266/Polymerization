@@ -12,8 +12,11 @@ polymerization (ATRP) with the chemistry of the [3dbfm module](../3dbfm/README.m
 itself as a LAMMPS plugin, for association and unimolecular reactions on any number of processors.
 Phase 3 is under way: the fix reports the bond tally and the molecule statistics of the lattice
 modules, and [example 5](../../examples/example_5/README.md) forms the FRP and ATRP networks of
-ref. 3 in a Kremer–Grest melt and compares them with the 3dbfm and statistical modules; the
-comparison runs on a cluster. Next:
+ref. 3 in a Kremer–Grest melt and compares them with the 3dbfm and statistical modules. In mini
+systems of 4,000 units the ATRP gel points equal those of 3dbfm, the FRP gel points agree within
+their scatter, and rings form early as in 3dbfm
+([results](../../examples/example_5/README.md#results-mini-systems)); the comparison at the size
+of the paper is to be run on a cluster. Next:
 
 | Phase | Content |
 |:--|:--|

@@ -27,7 +27,7 @@ constexpr std::string_view kUsage =
     "Reactive Monte Carlo simulation of radical copolymerization (FRP / ATRP) of\n"
     "mono- and divinyl monomers on the 3D bond fluctuation model. Keys given on the command\n"
     "line override the file. Run with --print-config to see every key and its default.\n\n"
-    "Please cite the papers listed in README.md under 'How to cite'.\n";
+    "Please cite the papers listed in README.md under 'Acknowledgements'.\n";
 
 }  // namespace
 

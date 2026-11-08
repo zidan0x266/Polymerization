@@ -29,7 +29,7 @@ constexpr std::string_view kUsage =
     "single-bead cross-linkers into a periodic box and writes a LAMMPS data file for\n"
     "end-linking simulations. Keys given on the command line override the file. Run with\n"
     "--print-config to see every key and its default.\n\n"
-    "Please cite the papers listed in README.md under 'How to cite'.\n";
+    "Please cite the papers listed in README.md under 'Acknowledgements'.\n";
 
 }  // namespace
 

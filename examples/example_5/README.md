@@ -41,23 +41,56 @@ conversion:
 | LAMMPS | [lammps](../../src/lammps/README.md), `in.radical` | Kremer–Grest melt, Langevin dynamics | one neighbor within 1.2 σ, at random, every 20 steps (`partner random`) |
 
 All three use the units, structural types and reaction categories of the 3dbfm module (the LAMMPS
-reaction files reproduce its transition table), 0.2 % initiator, a cross-linker fraction [X] of
-4, 8, 12, 16 or 20 %, and the rate constants of the paper: FRP `k_init` = 10⁻⁵, `k_p1` = 0.5,
-`k_p2` = 0.25, `k_term` = 0.95; ATRP `k_p1` = 0.005, `k_p2` = 0.0025. They are probabilities per
-Monte Carlo step, per check or rate coefficients, so times differ between the models and only
-quantities at equal conversion are compared. In LAMMPS, ATRP runs by default with ten times these
-rate constants to keep runs affordable; `--rates paper` runs it with the paper's values, to check
-that the structure does not depend on this choice.
+reaction files reproduce its transition table), a cross-linker fraction [X] of 4, 8, 12, 16 or
+20 %, and the rate constants of the paper: FRP `k_p1` = 0.5, `k_p2` = 0.25, `k_term` = 0.95; ATRP
+`k_p1` = 0.005, `k_p2` = 0.0025. They are probabilities per Monte Carlo step, per check or rate
+coefficients, so times differ between the models and only quantities at equal conversion are
+compared. In LAMMPS, ATRP runs by default with ten times these rate constants to keep runs
+affordable; `--rates paper` runs it with the paper's values, to check that the structure does not
+depend on this choice.
 
-### Runs
+The comparison runs in two stages:
 
-The full comparison is meant for a cluster. Build the toolkit and the plugin there (see the
+| Stage | Size | Composition | Where |
+|:--|:--|:--|:--|
+| building up (`--size mini`) | about 4,000 units: 3dbfm 34³ lattice with 4,176 units, statistical 4,176 units, LAMMPS 4,000 beads | 2 % initiator, FRP `k_init` = 10⁻⁴, 15 samples | a workstation, in minutes |
+| validation (`--size paper`) | the paper: 3dbfm 100³ lattice with 106,250 units, statistical 106,250 units, LAMMPS 108,000 beads | 0.2 % initiator, FRP `k_init` = 10⁻⁵, 5 samples, as in the paper | a cluster |
+
+What a small box must hold is many chains, not many units: at the 0.2 % initiator of the paper,
+4,000 units hold eight chains of some 500 units, too few for a gel point. The mini systems
+therefore have ten times more initiator, and FRP a ten times faster initiation, so that
+`k_init`/`k_p1` = 2 × 10⁻⁴, the largest ratio that keeps FRP kinetics realistic according to
+Furuya and Koga; all three models get the same composition, so the comparison stays one to one.
+As in our study of AB₂ polymerization (Zhang et al., *Adv. Theory Simul.* **2019**, 2, 1800102),
+many small samples replace one large system.
+
+### Runs on a workstation
+
+From an empty run directory, with the toolkit built in `build/` and the plugin in `build-plugin/`
+(or wherever `POLY_BUILD` points):
+
+```bash
+E=/path/to/Polymerization/examples/example_5
+python3 $E/cases.py lattice --size mini --samples 15 --x 4 12 20 > jobs_lattice.txt
+python3 $E/cases.py md --size mini --samples 15 --x 4 12 20 > jobs_md.txt
+seq $(wc -l < jobs_lattice.txt) | xargs -P 8 -I{} $E/run_job.sh jobs_lattice.txt {}
+seq $(wc -l < jobs_md.txt) | LMP=/path/to/lmp MPIRUN= xargs -P 8 -I{} $E/run_job.sh jobs_md.txt {}
+python3 $E/analyze.py compare . > comparison.md
+```
+
+`MPIRUN=` (empty) runs each LAMMPS sample as one process; eight run side by side. On eight cores
+of an Apple M4 the 180 lattice runs take a few minutes and the 90 LAMMPS runs (about 50 s for ATRP
+and 100 s for FRP each, up to conversion 0.96) about a quarter of an hour.
+
+### Runs on a cluster
+
+For the validation, build the toolkit and the plugin on the cluster (see the
 [repository README](../../README.md) and [`src/lammps/README.md`](../../src/lammps/README.md)), then
 in an empty run directory:
 
 ```bash
 export REPO=/path/to/Polymerization            # POLY_BUILD defaults to $REPO/build
-python3 $REPO/examples/example_5/cases.py lattice > jobs_lattice.txt   # 3dbfm and statistical
+python3 $REPO/examples/example_5/cases.py lattice > jobs_lattice.txt   # 3dbfm and statistical, paper size
 python3 $REPO/examples/example_5/cases.py md > jobs_md.txt             # LAMMPS
 python3 $REPO/examples/example_5/cases.py md --rates paper --mechanisms atrp --x 8 20 --samples 2 > jobs_md_paper.txt
 mkdir -p logs
@@ -71,19 +104,21 @@ lattice list can run inside one node job instead, e.g.
 The LAMMPS runs need `LMP`, `PLUGIN` (default `$POLY_BUILD/src/lammps/polyreactplugin.so`) and
 `MPIRUN` (`srun`, or `ibrun` on TACC systems).
 
-`cases.py` options: `--size paper` (default: 3dbfm 100³ lattice with 106,250 units, statistical
-106,250 units, LAMMPS 108,000 beads), `reduced` (68³ with 33,408 units, 33,408, 32,000) or `smoke`
-(tiny, for a test of the pipeline); `--samples` (default 5, as in the paper), `--x`, `--mechanisms`,
-`--stop` (default 0.96, as in the paper) and, for the lattice list, `--models bfm stat`.
+`cases.py` options: `--size paper` (default), `reduced` (68³ with 33,408 units, 33,408, 32,000
+beads; composition of the paper), `mini` or `smoke` (tiny, for a test of the pipeline; composition
+of the mini systems); `--init` and `--k-init` (initiator fraction and FRP initiation, defaults as
+above); `--samples` (default 5, as in the paper), `--x`, `--mechanisms`, `--stop` (default 0.96, as
+in the paper) and, for the lattice list, `--models bfm stat`. The LAMMPS runs write their reaction
+file (`react.cfg`) with `polyreact_preset` from these rate constants.
 
 Every run writes into `bfm/`, `stat/`, `md/` or `md_paper/` under `<mechanism>_X<x>_s<sample>`.
 The lattice runs turn their PSF snapshots (every 0.01 in conversion) into `clusters_<s>.csv` and
 delete them; the LAMMPS runs write the same quantities to their thermo output (`log_*.lammps`) and
 the final network to `final_*.data`.
 
-Cost on one core (lattice) or six cores (LAMMPS) of an Apple M4, at the reduced size: 3dbfm ATRP
-reaches a conversion of 0.74 after 675,000 Monte Carlo steps in about ten minutes, and FRP 0.91 in
-the same time; the statistical model takes seconds; LAMMPS ATRP with 8 % cross-linker reaches 0.8
+For planning, on one core (lattice) or six cores (LAMMPS) of an Apple M4 at the reduced size: 3dbfm
+ATRP reaches a conversion of 0.74 after 675,000 Monte Carlo steps in about ten minutes, and FRP 0.91
+in the same time; the statistical model takes seconds; LAMMPS ATRP with 8 % cross-linker reaches 0.8
 after 440,000 steps in about twenty minutes. The paper size is about three times larger, and the
 last part of the conversion up to 0.96 is the slowest.
 

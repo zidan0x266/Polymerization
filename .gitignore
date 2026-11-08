@@ -43,6 +43,10 @@ reaction/
 log.lammps
 log.cite
 
+# Python caches
+__pycache__/
+*.pyc
+
 # editors and OS
 .DS_Store
 .vscode/

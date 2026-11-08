@@ -111,8 +111,6 @@ class Engine {
     return in_range(a) && in_range(b) &&
            !pair_table_[static_cast<std::size_t>(a) * static_cast<std::size_t>(num_types_) + static_cast<std::size_t>(b)].empty();
   }
-  /// Whether beads of this type are the first bead of a pair reaction, i.e. look for partners.
-  [[nodiscard]] bool seeks(int type) const noexcept { return in_range(type) && seeks_[static_cast<std::size_t>(type)]; }
   [[nodiscard]] bool has_unimolecular() const noexcept { return has_single_; }
 
  private:
@@ -137,7 +135,6 @@ class Engine {
   std::vector<std::vector<std::uint32_t>> pair_table_;    ///< [a * num_types + b]: pair rules for types a, b
   std::vector<std::vector<std::uint32_t>> single_table_;  ///< [a]: unimolecular rules
   std::vector<std::uint8_t> reactive_;
-  std::vector<std::uint8_t> seeks_;
   Competition competition_{Competition::Independent};
   double max_cutoff_{0.0};
   bool has_single_{false};

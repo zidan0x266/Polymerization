@@ -50,7 +50,6 @@ void Engine::build(const ReactionFile& file, const std::map<std::string, int, st
   pair_table_.assign(static_cast<std::size_t>(num_types_) * static_cast<std::size_t>(num_types_), {});
   single_table_.assign(static_cast<std::size_t>(num_types_), {});
   reactive_.assign(static_cast<std::size_t>(num_types_), 0);
-  seeks_.assign(static_cast<std::size_t>(num_types_), 0);
 
   for (std::size_t i = 0; i < file.reactions.size(); ++i) {
     const Reaction& reaction = file.reactions[i];
@@ -89,7 +88,6 @@ void Engine::build(const ReactionFile& file, const std::map<std::string, int, st
     pair_table_[a * n + b].push_back(index);
     if (a != b) pair_table_[b * n + a].push_back(index);
     reactive_[a] = reactive_[b] = 1;
-    seeks_[a] = 1;
     max_cutoff_ = std::max(max_cutoff_, r.cutoff);
   }
   for (const auto& list : pair_table_) {

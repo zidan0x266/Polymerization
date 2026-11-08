@@ -192,7 +192,6 @@ group = g
             F = e.type_index("F");
   CHECK(e.num_types() == 6 && e.max_cutoff() == 2 && e.has_unimolecular());
   CHECK(e.reactive(A) && e.reactive(E) && !e.reactive(F));
-  CHECK(e.seeks(A) && e.seeks(C) && !e.seeks(B) && !e.seeks(E) && !e.seeks(F));
   CHECK(e.may_react(A, B) && e.may_react(B, A) && e.may_react(E, A) && !e.may_react(A, A) && !e.may_react(B, E) && !e.may_react(-1, A));
   TestRng rng(1);
   const PairContext near{1.0, false, false, false};

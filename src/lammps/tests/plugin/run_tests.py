@@ -9,7 +9,8 @@
 With --mpirun "" (a serial LAMMPS) only 1 processor is used.
 
   pairs     isolated A-B pairs: bonds only between partners, with the new types; the probability per
-            check of the pair reaction and of the competing decay B -> D (5 seeds, both partner modes)
+            check of the pair reaction and of the competing decay B -> D (5 seeds, both partner modes;
+            with partner random both A and B try the pair)
   triplets  B-A-B: A takes one bond per check up to its functionality and closes the angle B-A-B;
             the first bonds join two monomers, the second a polymer and a monomer
   squares   two bonded dimers: the second bond of a square closes a ring, refused unless the reaction
@@ -207,6 +208,21 @@ def check_squares(path, intramolecular):
     return f"{len(new)} new bonds"
 
 
+def outcome_probabilities(p_pair, n_pair, p_decay):
+    """Probabilities of the pair reaction and of the decay per check, with n_pair independent pair
+    attempts and one decay attempt, and a random choice among the attempts that pass."""
+    import itertools
+    rates = [p_pair] * n_pair + [p_decay]
+    pair = decay = 0.0
+    for passed in itertools.product((0, 1), repeat=len(rates)):
+        weight = math.prod(r if f else 1 - r for r, f in zip(rates, passed))
+        n = sum(passed)
+        if n:
+            pair += weight * sum(passed[:n_pair]) / n
+            decay += weight * passed[-1] / n
+    return pair, decay
+
+
 # ---- runs ---------------------------------------------------------------------------------------
 
 class Runner:
@@ -277,8 +293,9 @@ class Runner:
         return check_squares(data, intra == "yes") + f", {rings} rings"
 
     def rates(self, np, partner):
-        """Per check, an intact pair reacts with p_ab or B decays with p_dec; when both pass, one of
-        the two is taken at random."""
+        """Per check, the pair reaction of an intact pair is tried once (partner all) or twice, from
+        A and from B (partner random), and the decay of B once; one of the attempts that pass is
+        taken at random."""
         n = ab = dec = 0.0
         for seed in (11, 22, 33, 44, 55):
             _, log = self.small(np, "pairs.data", "pairs.rf", f"rate_{np}_{partner}_{seed}", seed=seed,
@@ -289,7 +306,8 @@ class Runner:
                 ab += cur["f_r[13]"] - prev["f_r[13]"]
                 dec += (cur["f_r[1]"] - cur["f_r[13]"]) - (prev["f_r[1]"] - prev["f_r[13]"])
         report = []
-        for name, k, p in (("pair", ab, 0.1 * 0.95 + 0.1 * 0.05 / 2), ("decay", dec, 0.05 * 0.9 + 0.1 * 0.05 / 2)):
+        expected = outcome_probabilities(0.1, 2 if partner == "random" else 1, 0.05)
+        for name, k, p in (("pair", ab, expected[0]), ("decay", dec, expected[1])):
             z = (k / n - p) / math.sqrt(p * (1 - p) / n)
             require(abs(z) < 4, f"{name} {k / n:.4f}, expected {p:.4f} ({z:+.1f} sigma)")
             report.append(f"{name} {k / n:.4f} (expected {p:.4f}, {z:+.1f} sigma)")

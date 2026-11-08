@@ -120,7 +120,7 @@ fix ID group-ID poly/react file seed keyword value ...
 |:--|:--|
 | `every N` | MD steps between two checks (default: `interval` of the file) |
 | `partner all` | every pair of beads within the cutoff is tried once per check (default) |
-| `partner random` | every bead that is the first bead of a pair reaction tries one neighbor in the group within the cutoff, chosen at random, as in the lattice models |
+| `partner random` | every bead that can take part in a pair reaction tries one neighbor in the group within the cutoff, chosen at random: as in the lattice models, a pair of such beads (a radical and a monomer, or two radicals) has two chances per check, one from each bead |
 | `functionality name` | the integer per-atom vector `i_name` (`fix property/atom`) that holds the functionalities; needed when the reactions use them, otherwise all are 0 |
 | `max N` | at most N reactions per check (default: `max_per_interval` of the file, unlimited) |
 | `log file` | write every reaction: step, reaction, center and partner atom IDs (partner 0 for a unimolecular reaction), distance, and 1 if the bond closes a ring |
@@ -213,8 +213,8 @@ The reactions are listed in the order of the reaction categories of the 3dbfm mo
 [Example 5](../../examples/example_5/README.md) runs these reactions in a Kremer–Grest melt (FENE bonds,
 WCA repulsion, cosine bending with k = 1.5, ρ = 0.85, Langevin thermostat, Δt = 0.005, as in ref. 3),
 with the composition of the 3dbfm examples: 0.2 % initiator and a cross-linker fraction `xl`. The
-beads start on an FCC lattice and are melted; a check every 20 steps tries one random partner per
-radical within 1.2 σ. The vinyl conversion is computed from the bead types as in the lattice
+beads start on an FCC lattice and are melted; every 20 steps, each bead that can react (radicals,
+monomers, cross-linkers with a vinyl group, initiators) tries one random partner within 1.2 σ. The vinyl conversion is computed from the bead types as in the lattice
 modules, the run stops at the conversion `stop`, and the thermo output gives the conversion, the
 radicals, the bond tally and the molecule statistics:
 
@@ -243,7 +243,7 @@ processors (also checked on 8) with systems whose outcome is known:
 | Test | Check |
 |:--|:--|
 | pairs | 1000 isolated A–B pairs, also across periodic and processor boundaries: bonds only between partners, with the new types |
-| probabilities | the probability per check of the pair reaction and of the competing decay B → D of the same bead, from 5 runs, both partner modes, within 4σ of the exact value (observed within 1.3σ) |
+| probabilities | the probability per check of the pair reaction and of the competing decay B → D of the same bead, from 5 runs, both partner modes (with `partner random` both beads try the pair), within 4σ of the exact value |
 | triplets | B–A–B: A takes one bond per check up to its functionality window and closes the angle B–A–B; the first bonds are counted as monomer–monomer, the second as polymer–monomer, and the molecule statistics are exact |
 | squares | two bonded dimers side by side: the second bond closes a ring and is refused unless the reaction is intramolecular, also when both bonds are proposed in the same check; the first bond is counted as polymer–polymer and, with `intramolecular = true`, the second as a ring |
 | kg | a Kremer–Grest melt polymerizing with the FRP preset for 3000 steps: the numbers of bonds and angles, and the pair, bond and angle energies, equal (to 1e-10) those of the final configuration read again by LAMMPS, which builds the special lists from scratch; with FENE special bonds, with 1-3 and 1-4 weights, and with `newton_bond` on and off. The bond tally adds up to the bonds created, and the molecule statistics equal those of the bonds in the data file |

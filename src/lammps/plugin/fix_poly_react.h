@@ -9,8 +9,9 @@
 //
 //   every N               steps between checks (default: interval of the file)
 //   partner all|random    all: every pair within the cutoff is tried once (default)
-//                         random: every bead that is the first bead of a pair reaction tries one
-//                         random neighbor within the cutoff
+//                         random: every bead that can take part in a pair reaction tries one
+//                         random neighbor within the cutoff, so a pair of such beads has two
+//                         chances per check, as in the lattice models
 //   functionality name    integer per-atom vector (i_name) with the functionalities (default: 0)
 //   max N                 most reactions per check (default: max_per_interval of the file)
 //   log file              write every reaction to a file

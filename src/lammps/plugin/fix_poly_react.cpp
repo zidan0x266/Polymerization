@@ -450,7 +450,6 @@ void FixPolyReact::post_integrate()
       if (!(mask[i] & groupbit)) continue;
       const int ti = type[i] - 1;
       if (!engine_->reactive(ti)) continue;
-      if (random_partner_ && !engine_->seeks(ti)) continue;
       const int *jlist = firstneigh[i];
       const int jnum = numneigh[i];
 

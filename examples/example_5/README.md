@@ -40,6 +40,10 @@ conversion:
 | statistical | [statistical](../../src/statistical/README.md) | none: every unit can meet every other | any unit, with the rates of the elementary reactions |
 | LAMMPS | [lammps](../../src/lammps/README.md), `in.radical` | Kremer–Grest melt, Langevin dynamics | one neighbor within 1.2 σ, at random, every 20 steps (`partner random`) |
 
+In 3dbfm and LAMMPS every unit that can react draws a partner, so a radical and a monomer, or two
+radicals, have two chances per step or check, one from each side; this keeps the ratios of the rate
+constants those of the statistical model.
+
 All three use the units, structural types and reaction categories of the 3dbfm module (the LAMMPS
 reaction files reproduce its transition table), a cross-linker fraction [X] of 4, 8, 12, 16 or
 20 %, and the rate constants of the paper: FRP `k_p1` = 0.5, `k_p2` = 0.25, `k_term` = 0.95; ATRP

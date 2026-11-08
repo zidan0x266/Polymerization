@@ -122,6 +122,26 @@ in the following study (further references in the [module README](src/dll/README
    Monomers: Applicability of Flory–Stockmayer Theory. *Macromolecules* **2018**, 51, 6673–6681.
    [10.1021/acs.macromol.8b01630](https://doi.org/10.1021/acs.macromol.8b01630)
 
+The structure of the LAMMPS fix borrows the ideas of **ChemLab**, the reactive coarse-grained
+molecular dynamics code of **Jakub Krajniak, Zidan Zhang, Erik Nies and Giovanni Samaey, KU
+Leuven, Belgium**
+([cgchemlab/chemlab](https://github.com/cgchemlab/chemlab),
+[10.5281/zenodo.817589](https://doi.org/10.5281/zenodo.817589)), developed for studies 8–10 below,
+and of the earlier coarse-grained molecular dynamics – reactive Monte Carlo approach of study 7:
+
+7. Z. Zhang, L. Wang, Z. Wang, X. He, Y. Chen, F. Müller-Plathe, M. C. Böhm. A coarse-grained
+   molecular dynamics – reactive Monte Carlo approach to simulate hyperbranched polycondensation.
+   *RSC Adv.* **2014**, 4, 56625–56636. [10.1039/C4RA10271A](https://doi.org/10.1039/C4RA10271A)
+8. J. Krajniak, Z. Zhang, S. Pandiyan, E. Nies, G. Samaey. Reverse mapping method for complex
+   polymer systems. *J. Comput. Chem.* **2018**, 39, 648–664.
+   [10.1002/jcc.25129](https://doi.org/10.1002/jcc.25129)
+9. J. Krajniak, Z. Zhang, S. Pandiyan, E. Nies, G. Samaey. Coarse-grained molecular dynamics
+   simulations of polymerization with forward and backward reactions. *J. Comput. Chem.* **2018**,
+   39, 1764–1778. [10.1002/jcc.25348](https://doi.org/10.1002/jcc.25348)
+10. Z. Zhang, J. Krajniak, G. Samaey, E. Nies. A parallel multiscale simulation framework for
+    complex polymerization: AB₂-type monomer hyperbranched polymerization as an example. *Adv.
+    Theory Simul.* **2019**, 2, 1800102. [10.1002/adts.201800102](https://doi.org/10.1002/adts.201800102)
+
 The reactive extensions and this version were developed in the group of Prof. Venkat Ganesan,
 McKetta Department of Chemical Engineering, The University of Texas at Austin.
 

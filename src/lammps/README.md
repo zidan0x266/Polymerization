@@ -269,11 +269,13 @@ engine, which is C++23.
 
 ## Credits and references
 
-The reaction format and the approach — reactions as rules on bead types and functionalities,
-checked every few MD steps within a capture radius, one reaction per bead, partners drawn at random
-— follow ChemLab by Jakub Krajniak and the papers below; the code here is new. The updates of bond
-storage, special lists and angles in the fix follow `fix bond/create` of LAMMPS (MC package,
-GPL-2.0); `rebuild_special_one`, `create_angles` and `dedup` are adapted from it.
+The structure of `fix poly/react` borrows the ideas of ChemLab, the reactive coarse-grained
+molecular dynamics code of Jakub Krajniak, Zidan Zhang, Erik Nies and Giovanni Samaey, KU Leuven
+(see the [acknowledgements](../../README.md#acknowledgements) of the repository): the reaction format, and reactions as rules on bead types and functionalities,
+checked every few MD steps within a capture radius, one reaction per bead, partners drawn at
+random. The code here is new. The updates of bond storage, special lists and angles in the fix
+follow `fix bond/create` of LAMMPS (MC package, GPL-2.0); `rebuild_special_one`, `create_angles`
+and `dedup` are adapted from it.
 
 1. J. Krajniak, Z. Zhang, S. Pandiyan, E. Nies, G. Samaey. Coarse-grained molecular dynamics
    simulations of polymerization with forward and backward reactions. *J. Comput. Chem.* **2018**,

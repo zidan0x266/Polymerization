@@ -11,7 +11,7 @@
 #include <string_view>
 #include <vector>
 
-#include "poly/fcc.hpp"
+#include "poly/geometry/fcc.hpp"
 #include "poly/random.hpp"
 
 namespace dll {
@@ -29,14 +29,14 @@ enum class InitialConfiguration {
 [[nodiscard]] std::optional<InitialConfiguration> parse_initial_configuration(std::string_view s) noexcept;
 
 /// Unwrapped lattice points of `n_chains` chains of `chain_length` beads, chain after chain.
-[[nodiscard]] std::vector<poly::Vec3i> initial_chains(InitialConfiguration kind, int cells, std::size_t chain_length,
+[[nodiscard]] std::vector<poly::geometry::Vec3i> initial_chains(InitialConfiguration kind, int cells, std::size_t chain_length,
                                                       std::size_t n_chains, poly::Rng& rng);
 
 /// Most chains of `chain_length` beads that fit straight into lattice rows.
 [[nodiscard]] std::size_t max_aligned_chains(int cells, std::size_t chain_length) noexcept;
 
 /// `count` distinct lattice points drawn uniformly from the sites not taken by `occupied`.
-[[nodiscard]] std::vector<poly::Vec3i> random_free_points(int cells, std::span<const poly::Vec3i> occupied, std::size_t count,
+[[nodiscard]] std::vector<poly::geometry::Vec3i> random_free_points(int cells, std::span<const poly::geometry::Vec3i> occupied, std::size_t count,
                                                           poly::Rng& rng);
 
 }  // namespace dll

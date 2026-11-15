@@ -8,7 +8,6 @@
 // unwrapped, so displacements and periodic images are exact.
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <expected>
@@ -20,13 +19,15 @@
 #include "poly/chem/progress.hpp"
 #include "poly/chem/tables.hpp"
 #include "poly/chem/unit.hpp"
-#include "poly/fcc.hpp"
+#include "poly/geometry/fcc.hpp"
+#include "poly/topology/bond_table.hpp"
+#include "poly/topology/molecules.hpp"
 
 namespace dll {
 
-using poly::FccGeometry;
-using poly::Site;
-using poly::Vec3i;
+using poly::geometry::FccGeometry;
+using poly::geometry::Site;
+using poly::geometry::Vec3i;
 using poly::chem::ConnectivityTally;
 using poly::chem::StructuralCounts;
 using poly::chem::UnitState;
@@ -72,20 +73,20 @@ class DllSystem {
     if (b < chain_beads()) return BeadType::Chain;
     return b < solute_beads() ? BeadType::Unit : BeadType::Solvent;
   }
-  [[nodiscard]] std::span<const Bead> bonds(Bead b) const noexcept { return {bonds_[b].data(), nbonds_[b]}; }
-  [[nodiscard]] bool bonded(Bead a, Bead b) const noexcept;
+  [[nodiscard]] std::span<const Bead> bonds(Bead b) const noexcept { return bonds_.partners(b); }
+  [[nodiscard]] bool bonded(Bead a, Bead b) const noexcept { return bonds_.bonded(a, b); }
 
   /// Chemical state of the unit `b` (type(b) must be Unit).
   [[nodiscard]] UnitState& state(Bead b) noexcept { return states_[b - first_unit()]; }
   [[nodiscard]] const UnitState& state(Bead b) const noexcept { return states_[b - first_unit()]; }
-  [[nodiscard]] UnitView view(Bead b) const noexcept { return {state(b), nbonds_[b]}; }
+  [[nodiscard]] UnitView view(Bead b) const noexcept { return {state(b), bonds_.count(b)}; }
   [[nodiscard]] std::span<const UnitState> states() const noexcept { return states_; }
 
   /// Bond the units `a` and `b`, which must sit on neighboring sites and have a free bond slot,
   /// and count the new bond in the connectivity tally.
   void bond(Bead a, Bead b);
   /// A representative bead of the molecule that `b` (not solvent) belongs to.
-  [[nodiscard]] Bead molecule(Bead b) const noexcept;
+  [[nodiscard]] Bead molecule(Bead b) const noexcept { return molecules_.find(b); }
   [[nodiscard]] const ConnectivityTally& connectivity() const noexcept { return tally_; }
   void reset_connectivity_tally() noexcept { tally_ = {}; }
   /// Number of units carrying each legacy structural-unit code.
@@ -102,7 +103,6 @@ class DllSystem {
  private:
   void place(Bead b, Vec3i p);
   void link(Bead a, Bead b);
-  void unite(Bead a, Bead b) noexcept;
 
   FccGeometry lattice_;
   std::size_t chain_length_;
@@ -110,11 +110,9 @@ class DllSystem {
   std::vector<Bead> occupant_;  ///< per site
   std::vector<Site> site_;      ///< per bead
   std::vector<Vec3i> unwrapped_;
-  std::vector<std::array<Bead, kMaxBonds>> bonds_;
-  std::vector<std::uint8_t> nbonds_;
-  std::vector<UnitState> states_;  ///< per unit
-  std::vector<Bead> parent_;       ///< molecules: union-find forest over chain beads and units
-  std::vector<std::uint32_t> molecule_size_;
+  poly::topology::BondTable<Bead, kMaxBonds> bonds_;
+  std::vector<UnitState> states_;              ///< per unit
+  poly::topology::Molecules<Bead> molecules_;  ///< over chain beads and units
   ConnectivityTally tally_{};
 };
 

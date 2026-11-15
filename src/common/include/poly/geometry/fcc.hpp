@@ -14,27 +14,9 @@
 #include <format>
 #include <stdexcept>
 
-namespace poly {
+#include "poly/geometry/vec3.hpp"
 
-/// Small integer vector for lattice positions and steps (doubled coordinates).
-struct Vec3i {
-  int x{0};
-  int y{0};
-  int z{0};
-
-  constexpr bool operator==(const Vec3i&) const noexcept = default;
-  constexpr Vec3i operator+(Vec3i o) const noexcept { return {x + o.x, y + o.y, z + o.z}; }
-  constexpr Vec3i operator-(Vec3i o) const noexcept { return {x - o.x, y - o.y, z - o.z}; }
-  constexpr Vec3i operator-() const noexcept { return {-x, -y, -z}; }
-  constexpr Vec3i& operator+=(Vec3i o) noexcept {
-    x += o.x;
-    y += o.y;
-    z += o.z;
-    return *this;
-  }
-  [[nodiscard]] constexpr int dot(Vec3i o) const noexcept { return x * o.x + y * o.y + z * o.z; }
-  [[nodiscard]] constexpr int norm2() const noexcept { return dot(*this); }
-};
+namespace poly::geometry {
 
 /// Index of a lattice site, 0 <= site < 4n^3.
 using Site = std::uint32_t;
@@ -110,4 +92,4 @@ class FccGeometry {
   int extent_;
 };
 
-}  // namespace poly
+}  // namespace poly::geometry

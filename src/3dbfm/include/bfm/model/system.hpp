@@ -18,6 +18,7 @@
 #include "bfm/model/bond_set.hpp"
 #include "bfm/model/lattice.hpp"
 #include "poly/chem/progress.hpp"
+#include "poly/topology/molecules.hpp"
 
 namespace bfm {
 
@@ -92,8 +93,8 @@ class BfmSystem {
   void bond_through_offset(Index center, Index partner, int slot);
 
   // ---- molecule bookkeeping for the reaction tally (union-find) ------------------------------
-  [[nodiscard]] Index molecule_root(Index id) noexcept;
-  [[nodiscard]] bool same_molecule(Index a, Index b) noexcept { return molecule_root(a) == molecule_root(b); }
+  [[nodiscard]] Index molecule_root(Index id) const noexcept { return molecules_.find(id); }
+  [[nodiscard]] bool same_molecule(Index a, Index b) const noexcept { return molecules_.same(a, b); }
 
   // ---- accessors ----------------------------------------------------------------------------
   [[nodiscard]] Index size() const noexcept { return static_cast<Index>(monomers_.size()); }
@@ -112,12 +113,11 @@ class BfmSystem {
 
  private:
   void add_bond(Index a, Index b, BondIndex vector_from_b_to_a);
-  void unite(Index a, Index b) noexcept;
 
   PeriodicLattice lattice_;
   const BondVectorSet* bonds_;
   std::vector<Monomer> monomers_;
-  std::vector<Index> parent_;
+  poly::topology::Molecules<Index> molecules_;
   ConnectivityTally tally_{};
 };
 

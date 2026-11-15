@@ -3,12 +3,12 @@
 
 #include "statistical/io/writers.hpp"
 
-#include "poly/chem/psf.hpp"
+#include "poly/io/psf.hpp"
 
 namespace statistical {
 
 void write_psf(const std::filesystem::path& path, const Network& network) {
-  poly::chem::write_psf(
+  poly::io::write_psf(
       path, network.size(), [&](std::size_t u) { return poly::chem::legacy_residue_name(network.view(static_cast<Unit>(u)).legacy_code()); },
       [&](std::size_t u) { return network.bonds(static_cast<Unit>(u)); });
 }

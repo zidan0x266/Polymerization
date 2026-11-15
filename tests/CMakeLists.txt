@@ -3,6 +3,11 @@
 
 set(POLY_EXAMPLES ${CMAKE_SOURCE_DIR}/examples)
 
+# ---- common -------------------------------------------------------------------------------------
+add_executable(common_tests common/test_main.cpp)
+target_link_libraries(common_tests PRIVATE poly::chemistry poly_warnings)
+add_test(NAME common.unit COMMAND common_tests)
+
 # ---- 3dbfm --------------------------------------------------------------------------------------
 add_executable(bfm_tests 3dbfm/test_main.cpp)
 target_link_libraries(bfm_tests PRIVATE poly::bfm poly_warnings)

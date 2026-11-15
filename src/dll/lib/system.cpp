@@ -3,10 +3,8 @@
 
 #include "dll/model/system.hpp"
 
-#include <algorithm>
 #include <format>
 #include <limits>
-#include <numeric>
 #include <stdexcept>
 
 namespace dll {
@@ -35,11 +33,8 @@ DllSystem::DllSystem(int cells, std::size_t chain_length, std::span<const Vec3i>
   occupant_.assign(n, kNoBead);
   site_.resize(n);
   unwrapped_.resize(n);
-  bonds_.assign(n, {});
-  nbonds_.assign(n, 0);
-  parent_.resize(solute_beads());
-  std::iota(parent_.begin(), parent_.end(), Bead{0});
-  molecule_size_.assign(solute_beads(), 1);
+  bonds_ = poly::topology::BondTable<Bead, kMaxBonds>(n);
+  molecules_.reset(solute_beads());
 
   for (Bead b = 0; b < chains.size(); ++b) {
     place(b, chains[b]);
@@ -48,7 +43,7 @@ DllSystem::DllSystem(int cells, std::size_t chain_length, std::span<const Vec3i>
         throw std::invalid_argument(std::format("bond {}-{} is not a nearest-neighbor step", b, b + 1));
       }
       link(b - 1, b);
-      unite(b - 1, b);
+      molecules_.unite(b - 1, b);
     }
   }
   for (std::size_t u = 0; u < units.size(); ++u) {
@@ -67,7 +62,7 @@ DllSystem::DllSystem(int cells, std::size_t chain_length, std::span<const Vec3i>
       throw std::invalid_argument(std::format("bond {}-{} does not join neighboring sites", a + 1, b + 1));
     }
     link(a, b);
-    unite(a, b);
+    molecules_.unite(a, b);
   }
 
   auto solvent = static_cast<Bead>(solute_beads());
@@ -92,50 +87,25 @@ void DllSystem::place(Bead b, Vec3i p) {
 }
 
 void DllSystem::link(Bead a, Bead b) {
-  if (nbonds_[a] >= kMaxBonds || nbonds_[b] >= kMaxBonds) {
+  if (bonds_.full(a) || bonds_.full(b)) {
     throw std::logic_error(std::format("bond {}-{} exceeds {} bonds per bead", a + 1, b + 1, kMaxBonds));
   }
-  bonds_[a][nbonds_[a]++] = b;
-  bonds_[b][nbonds_[b]++] = a;
-}
-
-bool DllSystem::bonded(Bead a, Bead b) const noexcept {
-  return std::ranges::find(bonds(a), b) != bonds(a).end();
+  bonds_.link(a, b);
 }
 
 void DllSystem::bond(Bead a, Bead b) {
   if (type(a) != BeadType::Unit || type(b) != BeadType::Unit || a == b || bonded(a, b)) {
     throw std::logic_error(std::format("cannot bond beads {} and {}", a + 1, b + 1));
   }
-  if (nbonds_[a] == 0 && nbonds_[b] == 0) {
-    ++tally_.monomer_monomer;
-  } else if (nbonds_[a] != 0 && nbonds_[b] != 0) {
-    ++(molecule(a) == molecule(b) ? tally_.intramolecular : tally_.polymer_polymer);
-  } else {
-    ++tally_.polymer_monomer;
-  }
+  tally_.count(bonds_.count(a), bonds_.count(b), [&] { return molecules_.same(a, b); });
   link(a, b);
-  unite(a, b);
-}
-
-Bead DllSystem::molecule(Bead b) const noexcept {
-  while (parent_[b] != b) b = parent_[b];
-  return b;
-}
-
-void DllSystem::unite(Bead a, Bead b) noexcept {
-  // Union by size keeps the trees shallow, so molecule() needs no path compression.
-  Bead ra = molecule(a), rb = molecule(b);
-  if (ra == rb) return;
-  if (molecule_size_[ra] < molecule_size_[rb]) std::swap(ra, rb);
-  parent_[rb] = ra;
-  molecule_size_[ra] += molecule_size_[rb];
+  molecules_.unite(a, b);
 }
 
 StructuralCounts DllSystem::structural_counts() const noexcept {
   StructuralCounts counts{};
   for (std::size_t u = 0; u < states_.size(); ++u) {
-    const int code = poly::chem::legacy_type_code(states_[u], nbonds_[first_unit() + u]);
+    const int code = poly::chem::legacy_type_code(states_[u], bonds_.count(first_unit() + static_cast<Bead>(u)));
     if (code >= 0 && code < poly::chem::kNumLegacyTypeCodes) ++counts[static_cast<std::size_t>(code)];
   }
   return counts;
@@ -164,7 +134,7 @@ std::expected<void, std::string> DllSystem::validate() const {
     if (lattice_.wrap_any(unwrapped_[b]) != lattice_.position(s)) return fail(std::format("bead {} is not where its site is", b + 1));
   }
   for (Bead b = 0; b < n; ++b) {
-    if (type(b) == BeadType::Solvent && nbonds_[b] != 0) return fail(std::format("solvent bead {} is bonded", b + 1));
+    if (type(b) == BeadType::Solvent && bonds_.count(b) != 0) return fail(std::format("solvent bead {} is bonded", b + 1));
     for (const Bead p : bonds(b)) {
       if (p >= n || p == b) return fail(std::format("bead {} has an invalid bond", b + 1));
       if (lattice_.minimum_image(unwrapped_[p] - unwrapped_[b]).norm2() != 2) {

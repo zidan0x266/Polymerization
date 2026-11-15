@@ -222,9 +222,10 @@ apps/      dll_react
 
 Unit tests are in [`tests/dll`](../../tests/dll); every time step of the motion is compared there
 with a brute-force implementation of the rules above. The chemistry (unit states, reaction
-schemes, bookkeeping and tables), the FCC geometry, the random number generator and the
-configuration reader are shared with the other modules (`src/common`), and the random-walk
-starting configurations come from the randomwalk module.
+schemes, bookkeeping and tables), the FCC geometry, the molecule and bond bookkeeping, the PDB/PSF
+writers, the random number generator and the configuration reader are shared with the other
+modules ([`src/common`](../common/README.md)), and the random-walk starting configurations come
+from the randomwalk module.
 
 ## References
 

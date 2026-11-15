@@ -31,9 +31,10 @@ their own work.
 
 Each module keeps its code and README under `src/<module>/`, inputs under
 `examples/example_<n>/` and tests under `tests/<module>/`; the LAMMPS fix, licensed separately, keeps
-its tests in `src/lammps/`. Code shared by the modules, such as the
-random number generator, the configuration-file reader and the FRP/ATRP chemistry of the lattice
-models, is in `src/common/`. All modules are built and tested together from the repository root.
+its tests in `src/lammps/`. Code shared by the modules is in [`src/common/`](src/common/README.md):
+the random number generator and configuration-file reader, lattice geometry, molecule and bond
+bookkeeping, the FRP/ATRP chemistry and the output writers. All modules are built and tested
+together from the repository root.
 
 ## Build
 

@@ -131,8 +131,9 @@ apps/      stat_react
 ```
 
 Unit tests are in [`tests/statistical`](../../tests/statistical). The chemistry (unit states,
-mechanisms, reaction categories, bookkeeping, tables and PSF output) and the random number
-generator are shared with the lattice modules (`src/common`).
+mechanisms, reaction categories, bookkeeping and tables), the molecule and bond bookkeeping, the
+PSF writer and the random number generator are shared with the lattice modules
+([`src/common`](../common/README.md)).
 
 ## References
 

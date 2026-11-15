@@ -6,10 +6,10 @@
 #include <charconv>
 #include <concepts>
 #include <format>
-#include <fstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "poly/io/output_file.hpp"
 
 namespace rw {
 
@@ -58,16 +58,6 @@ std::vector<std::string> coordinate_table(const Packing& packing) {
   return table;
 }
 
-std::ofstream open_output(const std::filesystem::path& path) {
-  std::ofstream out(path, std::ios::binary);
-  if (!out) throw std::runtime_error(std::format("cannot write {}", path.string()));
-  return out;
-}
-
-void check_written(const std::ofstream& out, const std::filesystem::path& path) {
-  if (!out) throw std::runtime_error(std::format("error while writing {}", path.string()));
-}
-
 }  // namespace
 
 void write_lammps_data(std::ostream& stream, const Packing& packing, double mass, std::string_view title) {
@@ -106,9 +96,9 @@ void write_lammps_data(std::ostream& stream, const Packing& packing, double mass
 }
 
 void write_lammps_data(const std::filesystem::path& path, const Packing& packing, double mass, std::string_view title) {
-  auto out = open_output(path);
+  auto out = poly::io::open_output(path, std::ios::binary);
   write_lammps_data(out, packing, mass, title);
-  check_written(out, path);
+  poly::io::check_written(out, path);
 }
 
 void write_xyz(std::ostream& stream, const Packing& packing) {
@@ -128,9 +118,9 @@ void write_xyz(std::ostream& stream, const Packing& packing) {
 }
 
 void write_xyz(const std::filesystem::path& path, const Packing& packing) {
-  auto out = open_output(path);
+  auto out = poly::io::open_output(path, std::ios::binary);
   write_xyz(out, packing);
-  check_written(out, path);
+  poly::io::check_written(out, path);
 }
 
 }  // namespace rw

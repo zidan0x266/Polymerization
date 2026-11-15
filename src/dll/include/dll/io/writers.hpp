@@ -3,8 +3,8 @@
 //
 // Output: PDB/PSF snapshots in the layout of the 3dbfm module (legacy residue names, each bond
 // listed from both ends), for visualization and network analysis. Lengths are in units of the
-// bond length; the solvent is left out. The per-sample tables come from src/common
-// (poly/chem/tables.hpp).
+// bond length; the solvent is left out. The files are written by src/common (poly/io/), which
+// also has the per-sample tables (poly/chem/tables.hpp).
 #pragma once
 
 #include <filesystem>

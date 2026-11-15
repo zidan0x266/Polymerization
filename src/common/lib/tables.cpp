@@ -8,7 +8,8 @@
 #include <format>
 #include <ostream>  // std::print / std::println overloads for std::ostream
 #include <print>
-#include <stdexcept>
+
+#include "poly/io/output_file.hpp"
 
 namespace poly::chem {
 
@@ -19,8 +20,7 @@ SampleTables::SampleTables(const std::filesystem::path& dir, int sample, std::sp
   const auto open = [&](std::string_view stem, std::string_view header) {
     const auto path = dir / std::format("{}_{}.dat", stem, sample);
     const bool fresh = !std::filesystem::exists(path) || std::filesystem::file_size(path) == 0;
-    std::ofstream f(path, std::ios::app);
-    if (!f) throw std::runtime_error(std::format("cannot open {} for writing", path.string()));
+    auto f = poly::io::open_output(path, std::ios::app);
     if (fresh) std::println(f, "{}", header);
     return f;
   };

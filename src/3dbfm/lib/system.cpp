@@ -3,7 +3,6 @@
 
 #include "bfm/model/system.hpp"
 
-#include <numeric>
 #include <string>
 
 namespace bfm {
@@ -19,8 +18,7 @@ void BfmSystem::place_randomly(std::span<const UnitState> composition, Rng& rng)
   }
   lattice_.clear();
   monomers_.assign(static_cast<std::size_t>(n), Monomer{});
-  parent_.resize(static_cast<std::size_t>(n));
-  std::iota(parent_.begin(), parent_.end(), Index{0});
+  molecules_.reset(static_cast<std::size_t>(n));
   tally_ = {};
 
   const auto hx = static_cast<std::uint32_t>(lattice_.lx() / 2);
@@ -44,8 +42,7 @@ void BfmSystem::load(std::vector<Monomer> monomers) {
   lattice_.clear();
   monomers_ = std::move(monomers);
   const auto n = size();
-  parent_.resize(static_cast<std::size_t>(n));
-  std::iota(parent_.begin(), parent_.end(), Index{0});
+  molecules_.reset(static_cast<std::size_t>(n));
   tally_ = {};
   for (Index id = 0; id < n; ++id) {
     const auto& m = monomers_[static_cast<std::size_t>(id)];
@@ -59,7 +56,7 @@ void BfmSystem::load(std::vector<Monomer> monomers) {
     lattice_.occupy_cube(a, id);
   }
   for (Index id = 0; id < n; ++id) {
-    for (const Bond b : monomers_[static_cast<std::size_t>(id)].bonds()) unite(id, b.partner);
+    for (const Bond b : monomers_[static_cast<std::size_t>(id)].bonds()) molecules_.unite(id, b.partner);
   }
   validate();
 }
@@ -95,37 +92,11 @@ void BfmSystem::add_bond(Index a, Index b, BondIndex vector_from_b_to_a) {
 }
 
 void BfmSystem::bond_through_offset(Index center, Index partner, int slot) {
-  const Monomer& mc = monomers_[static_cast<std::size_t>(center)];
-  const Monomer& mp = monomers_[static_cast<std::size_t>(partner)];
-  if (mc.nbonds == 0 && mp.nbonds == 0) {
-    ++tally_.monomer_monomer;
-  } else if (mc.nbonds != 0 && mp.nbonds != 0) {
-    if (same_molecule(center, partner)) {
-      ++tally_.intramolecular;
-    } else {
-      ++tally_.polymer_polymer;
-    }
-  } else {
-    ++tally_.polymer_monomer;
-  }
+  tally_.count(monomers_[static_cast<std::size_t>(center)].nbonds, monomers_[static_cast<std::size_t>(partner)].nbonds,
+               [&] { return same_molecule(center, partner); });
   // The partner sits at center + offset, so the vector from partner to center is -offset.
   add_bond(center, partner, bonds_->reaction_offsets()[slot].bond_from_partner_to_center);
-  unite(center, partner);
-}
-
-Index BfmSystem::molecule_root(Index id) noexcept {
-  while (parent_[static_cast<std::size_t>(id)] != id) {
-    const Index grand = parent_[static_cast<std::size_t>(parent_[static_cast<std::size_t>(id)])];
-    parent_[static_cast<std::size_t>(id)] = grand;  // path halving
-    id = grand;
-  }
-  return id;
-}
-
-void BfmSystem::unite(Index a, Index b) noexcept {
-  const Index ra = molecule_root(a);
-  const Index rb = molecule_root(b);
-  if (ra != rb) parent_[static_cast<std::size_t>(rb)] = ra;
+  molecules_.unite(center, partner);
 }
 
 std::array<std::int64_t, kNumLegacyTypeCodes> BfmSystem::structural_counts() const noexcept {

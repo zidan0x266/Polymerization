@@ -20,6 +20,19 @@ struct ConnectivityTally {
   std::uint64_t polymer_monomer{0};
   std::uint64_t polymer_polymer{0};
   std::uint64_t intramolecular{0};
+
+  /// Count a new bond between two units that had `bonds_a` and `bonds_b` bonds before it.
+  /// `same_molecule()` is asked only when both had bonds.
+  template <class SameMolecule>
+  void count(int bonds_a, int bonds_b, SameMolecule&& same_molecule) {
+    if (bonds_a == 0 && bonds_b == 0) {
+      ++monomer_monomer;
+    } else if (bonds_a != 0 && bonds_b != 0) {
+      ++(same_molecule() ? intramolecular : polymer_polymer);
+    } else {
+      ++polymer_monomer;
+    }
+  }
 };
 
 /// Running totals of the reaction phase for one sample.

@@ -2,8 +2,8 @@
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 //
 // Output: PDB/PSF snapshots in the legacy layout (1-based ids and coordinates, legacy residue
-// names) for visualization and network analysis. The per-sample tables come from src/common
-// (poly/chem/tables.hpp).
+// names) for visualization and network analysis, written by src/common (poly/io/). The
+// per-sample tables come from src/common too (poly/chem/tables.hpp).
 #pragma once
 
 #include <filesystem>

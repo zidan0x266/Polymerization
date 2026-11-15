@@ -3,8 +3,8 @@
 //
 // Output: PSF snapshots of the network topology in the layout of the lattice modules (legacy
 // residue names, each bond listed from both ends), for network analysis. The units have no
-// coordinates, so there is no PDB file. The per-sample tables come from src/common
-// (poly/chem/tables.hpp).
+// coordinates, so there is no PDB file. The file is written by src/common (poly/io/), which
+// also has the per-sample tables (poly/chem/tables.hpp).
 #pragma once
 
 #include <filesystem>

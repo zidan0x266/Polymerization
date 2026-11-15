@@ -7,7 +7,7 @@
 #include <stdexcept>
 
 #include "poly/chem/tables.hpp"
-#include "poly/fcc.hpp"
+#include "poly/geometry/fcc.hpp"
 #include "poly/ini.hpp"
 
 namespace dll {
@@ -88,8 +88,8 @@ void Config::apply_overrides(const std::vector<std::string>& overrides) {
 
 void Config::validate() const {
   const auto fail = [](std::string_view msg) { throw std::invalid_argument(std::format("invalid configuration: {}", msg)); };
-  if (cells < poly::FccGeometry::kMinCells || cells > poly::FccGeometry::kMaxCells) {
-    fail(std::format("cells must be from {} to {}", poly::FccGeometry::kMinCells, poly::FccGeometry::kMaxCells));
+  if (cells < poly::geometry::FccGeometry::kMinCells || cells > poly::geometry::FccGeometry::kMaxCells) {
+    fail(std::format("cells must be from {} to {}", poly::geometry::FccGeometry::kMinCells, poly::geometry::FccGeometry::kMaxCells));
   }
   if (n_chains > 0 && chain_length < 2) fail("chain_length must be at least 2");
   const std::size_t sites = 4 * static_cast<std::size_t>(cells) * static_cast<std::size_t>(cells) * static_cast<std::size_t>(cells);

@@ -1,6 +1,7 @@
 # Code shared by every module.
-#   poly::common     header-only: random number generator, configuration-file reader, FCC geometry,
-#                    index set
+#   poly::common     header-only: random number generator, configuration-file reader, index set,
+#                    geometry (lattice vector, FCC lattice), topology (molecules, bond lists) and
+#                    output (files, PDB and PSF writers); see README.md
 #   poly::chemistry  radical polymerization chemistry (unit states, reaction schemes, bookkeeping
 #                    and per-sample tables), used by the reactive lattice modules
 

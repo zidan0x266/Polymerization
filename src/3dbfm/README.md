@@ -102,9 +102,10 @@ apps/      bfm_react
 ```
 
 Unit tests are in [`tests/3dbfm`](../../tests/3dbfm). The chemistry (unit states, the FRP and ATRP
-reaction schemes, the reaction bookkeeping and the per-sample tables), the random number generator
-and the configuration reader are shared with the other modules and live in
-[`src/common`](../common) (`poly/chem/`); `sim/reaction.hpp` refers to it. A new polymerization
+reaction schemes, the reaction bookkeeping and the per-sample tables), the random number generator,
+the configuration reader, the lattice vector, the molecule bookkeeping and the PDB/PSF writers are
+shared with the other modules and live in [`src/common`](../common/README.md); the chemistry is in
+`poly/chem/`, and `sim/reaction.hpp` refers to it. A new polymerization
 mechanism is added there as a new `ReactionScheme`, which also declares which units are reactive,
 and is then available in all modules. The lattice and system classes are independent of the
 chemistry.

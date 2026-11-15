@@ -10,11 +10,11 @@
 // the other segment).
 #pragma once
 
-#include "poly/fcc.hpp"
+#include "poly/geometry/fcc.hpp"
 
 namespace dll {
 
-using poly::Vec3i;
+using poly::geometry::Vec3i;
 
 /// Straight path of a bead during a time step, in lattice coordinates.
 struct Path {

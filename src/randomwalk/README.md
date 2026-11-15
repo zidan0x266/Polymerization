@@ -109,8 +109,9 @@ lib/       implementation
 apps/      rw_pack
 ```
 
-Unit tests are in [`tests/randomwalk`](../../tests/randomwalk). The random number generator and
-the configuration reader are shared with the other modules (`src/common`).
+Unit tests are in [`tests/randomwalk`](../../tests/randomwalk). The random number generator, the
+configuration reader and the FCC geometry are shared with the other modules
+([`src/common`](../common/README.md)).
 
 ## References
 

@@ -11,12 +11,12 @@
 #include <initializer_list>
 #include <vector>
 
-#include "poly/fcc.hpp"
+#include "poly/geometry/fcc.hpp"
 
 namespace rw {
 
-using poly::Site;
-using poly::Vec3i;
+using poly::geometry::Site;
+using poly::geometry::Vec3i;
 
 /// Set of bond angles a chain may form. Two consecutive nearest-neighbor steps p and q meet at
 /// an angle of 180, 120, 90, 60 or 0 degrees for p.q = 2, 1, 0, -1, -2; the 0-degree reversal
@@ -59,7 +59,7 @@ class AngleSet {
 
 /// FCC lattice whose sites are either empty or occupied; each site also counts its occupied
 /// nearest neighbors.
-class FccLattice : public poly::FccGeometry {
+class FccLattice : public poly::geometry::FccGeometry {
  public:
   /// A lattice of `cells` cubic cells per edge (kMinCells to kMaxCells), all sites empty.
   explicit FccLattice(int cells) : FccGeometry(cells), state_(num_sites(), 0) {}

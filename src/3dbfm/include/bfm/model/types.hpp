@@ -2,7 +2,7 @@
 // Copyright (C) 2023-2026 Zidan Zhang <zhangzidan@gmail.com>
 //
 // Fundamental value types of the 3D bond fluctuation model (3DBFM), and the names the module
-// takes from src/common: random numbers, index sets and the states of the units.
+// takes from src/common: random numbers, index sets, lattice vectors and the states of the units.
 #pragma once
 
 #include <cstdint>
@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "poly/chem/unit.hpp"
+#include "poly/geometry/vec3.hpp"
 #include "poly/index_set.hpp"
 #include "poly/random.hpp"
 
@@ -30,26 +31,7 @@ inline constexpr int kNumReactionOffsets = 54;
 inline constexpr int kMaxBondsPerUnit = 4;
 
 /// Small integer vector used for lattice coordinates, offsets and bond vectors.
-struct Vec3i {
-  int x{0};
-  int y{0};
-  int z{0};
-
-  constexpr bool operator==(const Vec3i&) const noexcept = default;
-  constexpr Vec3i operator+(Vec3i o) const noexcept { return {x + o.x, y + o.y, z + o.z}; }
-  constexpr Vec3i operator-(Vec3i o) const noexcept { return {x - o.x, y - o.y, z - o.z}; }
-  constexpr Vec3i operator-() const noexcept { return {-x, -y, -z}; }
-  constexpr Vec3i& operator+=(Vec3i o) noexcept {
-    x += o.x;
-    y += o.y;
-    z += o.z;
-    return *this;
-  }
-  [[nodiscard]] constexpr int norm2() const noexcept { return x * x + y * y + z * z; }
-  [[nodiscard]] constexpr int operator[](int axis) const noexcept {
-    return axis == 0 ? x : (axis == 1 ? y : z);
-  }
-};
+using poly::geometry::Vec3i;
 
 /// The six nearest-neighbor jump directions. The enumeration order equals the legacy
 /// numbering (legacy 1..6 -> 0..5) so that runs stay comparable with the legacy programs.
